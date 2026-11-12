@@ -26,7 +26,7 @@ npm run og        # regenera public/og-distrito587.png (1200x630) desde el logo
 
 Columnas: `categoria,orden,nombre,descripcion,precio,disponible,imagen`. Categorías válidas: Hamburguesas, Tocomples, Papas caseras, Agregados, Salsas, Bebidas. El precio es un entero en CLP (se acepta `6.990` o `$6.990`). `disponible = NO` oculta el producto.
 
-Si una fila no cuadra, el build falla y lista los errores por fila (`fila 7: el precio 'seis mil' no es un número`). La web publicada no cambia.
+Si una fila no cuadra, el build falla y lista los errores por fila, con el número de línea del CSV (`fila 7: el precio 'seis mil' no es un número`; 1 es el encabezado). El precio acepta `6990`, `6.990`, `$6.990` o `$ 6.990`; `6.99` o `1.2.3` se rechazan. La web publicada no cambia.
 
 ### Datos del local
 
@@ -52,6 +52,10 @@ Con `whatsapp` aparece el botón "Pedir por WhatsApp"; con `horario` y `geo` el 
 | `BASE_PATH` | `/distrito587-web` | `/` |
 
 En Settings > Pages, la fuente tiene que ser "GitHub Actions".
+
+URLs sin barra final: el build genera `carta.html` (`build.format: 'file'`, `trailingSlash: 'never'`), así que la carta vive en `/carta` (esa es la URL de los QR). La portada conserva la barra (`/distrito587-web/` en Fase 1, `/` en Fase 3).
+
+`robots.txt` solo tiene efecto en la raíz del dominio, o sea desde la Fase 3: en el subdirectorio de github.io los buscadores no lo leen.
 
 ## Reglas
 

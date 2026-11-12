@@ -17,5 +17,8 @@
     "astro": "^5.18.2"
   },
   "private": true,
-  "type": "module"
+  "type": "module",
+  "devDependencies": {
+    "sharp": "^0.34.5"
+  }
 }

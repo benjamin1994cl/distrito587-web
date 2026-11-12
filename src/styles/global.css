@@ -81,6 +81,11 @@ a {
   border-radius: 4px;
 }
 
+/* Fondos claros: el amarillo sobre crema da 1.38:1, el negro da más de 18:1 (WCAG 1.4.11) */
+.hero :focus-visible {
+  outline-color: #000;
+}
+
 .contenedor {
   width: min(100% - 2 * var(--gutter), var(--ancho));
   margin-inline: auto;
@@ -100,6 +105,13 @@ a {
 
 .saltar:focus {
   top: 1rem;
+}
+
+/* Aparece sobre la portada (crema) o la carta (oscura): anillo negro más aro blanco */
+.saltar:focus-visible {
+  outline: 3px solid #000;
+  outline-offset: 0;
+  box-shadow: 0 0 0 6px #fff;
 }
 
 .visualmente-oculto {

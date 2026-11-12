@@ -10,8 +10,8 @@ const base = process.env.BASE_PATH || '/distrito587-web';
 export default defineConfig({
   site,
   base,
-  trailingSlash: 'ignore',
+  trailingSlash: 'never',
   output: 'static',
-  build: { inlineStylesheets: 'always' },
+  build: { format: 'file', inlineStylesheets: 'always' },
   integrations: [sitemap({ filter: (page) => !page.includes('/404') })],
 });
