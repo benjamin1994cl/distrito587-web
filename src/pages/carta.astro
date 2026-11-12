@@ -1,0 +1,235 @@
+---
+// Carta liviana para los QR de las mesas. Una columna, pestañas con anclas
+// (funcionan sin JS) y un script opcional que marca la pestaña activa.
+import Base from '../layouts/Base.astro';
+import isotipo from '../assets/marca/distrito587-isotipo-color.svg';
+import carta from '../data/carta.json';
+import { precio, url } from '../lib/formato';
+import { datos, direccionCorta, urlInstagram } from '../lib/local';
+
+const burgers = carta.categorias.find((c) => c.id === 'hamburguesas');
+const desde = burgers ? Math.min(...burgers.productos.map((b) => b.precio)) : 0;
+---
+
+<Base
+  titulo="Carta · Distrito 587"
+  descripcion={`Carta de Distrito 587 en Osorno: smash burgers desde ${precio(desde)} con papas caseras de regalo, tocomples, papas, agregados, salsas y bebidas.`}
+  ruta="carta"
+>
+  <header class="cabecera">
+    <a href={url()} class="cabecera__marca">
+      <img
+        src={isotipo.src}
+        width="44"
+        height={Math.round((44 * isotipo.height) / isotipo.width)}
+        alt=""
+        decoding="async"
+      />
+      <span>{datos.nombre}</span>
+    </a>
+    <h1>Carta</h1>
+  </header>
+
+  <nav class="pestanas" aria-label="Categorías de la carta">
+    <ul>
+      {
+        carta.categorias.map((c) => (
+          <li>
+            <a href={`#${c.id}`}>{c.nombre}</a>
+          </li>
+        ))
+      }
+    </ul>
+  </nav>
+
+  <main id="contenido" class="carta">
+    <p class="aviso">Todas las burgers llevan papas caseras de regalo</p>
+    {
+      carta.categorias.map((c) => (
+        <section id={c.id} class="categoria" aria-labelledby={`t-${c.id}`}>
+          <h2 id={`t-${c.id}`}>{c.nombre}</h2>
+          <ul>
+            {c.productos.map((p) => (
+              <li class="producto">
+                <div class="producto__fila">
+                  <h3>{p.nombre}</h3>
+                  <p class="precio">{precio(p.precio)}</p>
+                </div>
+                {p.descripcion && <p class="producto__desc">{p.descripcion}</p>}
+              </li>
+            ))}
+          </ul>
+        </section>
+      ))
+    }
+  </main>
+
+  <footer class="pie-carta">
+    <p>{direccionCorta}</p>
+    <p><a href={urlInstagram} rel="noopener">Instagram @{datos.instagram}</a></p>
+    <p><a href={url()}>Ir al inicio</a></p>
+  </footer>
+</Base>
+
+<script>
+  // Opcional: marca la pestaña de la categoría visible. Sin JS las anclas igual funcionan.
+  const enlaces = new Map(
+    [...document.querySelectorAll<HTMLAnchorElement>('.pestanas a')].map((a) => [
+      a.hash.slice(1),
+      a,
+    ]),
+  );
+  const observador = new IntersectionObserver(
+    (entradas) => {
+      for (const e of entradas) {
+        if (!e.isIntersecting) continue;
+        enlaces.forEach((a) => a.removeAttribute('aria-current'));
+        const activo = enlaces.get(e.target.id);
+        if (activo) {
+          activo.setAttribute('aria-current', 'true');
+          const lista = activo.closest('ul')!;
+          lista.scrollLeft = activo.offsetLeft - (lista.clientWidth - activo.offsetWidth) / 2;
+        }
+      }
+    },
+    { rootMargin: '-30% 0px -60% 0px' },
+  );
+  document.querySelectorAll('.categoria').forEach((s) => observador.observe(s));
+</script>
+
+<style>
+  .cabecera {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    max-width: 40rem;
+    margin-inline: auto;
+    padding: 1rem var(--gutter) 0.5rem;
+  }
+
+  .cabecera__marca {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    color: #fff;
+    text-decoration: none;
+    font-family: var(--display);
+    font-size: 1.6rem;
+  }
+
+  .cabecera h1 {
+    font-size: 2.6rem;
+    color: var(--d587-rojo);
+  }
+
+  .pestanas {
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    background: rgb(14 14 14 / 0.96);
+    border-bottom: 1px solid var(--borde);
+  }
+
+  .pestanas ul {
+    display: flex;
+    gap: 0.5rem;
+    max-width: 40rem;
+    margin: 0 auto;
+    padding: 0.6rem var(--gutter);
+    list-style: none;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .pestanas a {
+    display: block;
+    padding: 0.55rem 1rem;
+    border: 1px solid var(--borde);
+    border-radius: 999px;
+    color: #fff;
+    text-decoration: none;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  .pestanas a[aria-current] {
+    background: var(--d587-amarillo);
+    border-color: var(--d587-amarillo);
+    color: #000;
+  }
+
+  .carta,
+  .pie-carta {
+    max-width: 40rem;
+    margin-inline: auto;
+    padding-inline: var(--gutter);
+  }
+
+  .aviso {
+    margin-top: 1.25rem;
+    padding: 0.75rem 1rem;
+    background: var(--d587-amarillo);
+    color: #000;
+    border-radius: var(--radio);
+    font-family: var(--display);
+    font-size: 1.5rem;
+    line-height: 1.1;
+    text-align: center;
+  }
+
+  .categoria {
+    padding-top: 2rem;
+  }
+
+  .categoria h2 {
+    font-size: 2.6rem;
+    color: var(--d587-naranja);
+    margin-bottom: 0.25rem;
+  }
+
+  .categoria ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .producto {
+    padding-block: 0.9rem;
+    border-bottom: 1px solid var(--borde);
+  }
+
+  .producto__fila {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 1rem;
+  }
+
+  .producto h3 {
+    font-family: var(--cuerpo);
+    font-weight: 600;
+    font-size: 1.2rem;
+    line-height: 1.25;
+    letter-spacing: 0;
+  }
+
+  .producto .precio {
+    font-size: 2rem;
+    line-height: 1;
+  }
+
+  .producto__desc {
+    margin-top: 0.25rem;
+    color: var(--texto-suave);
+    font-size: 1rem;
+  }
+
+  .pie-carta {
+    padding-block: 2.5rem 3rem;
+    color: var(--texto-suave);
+    font-size: 0.95rem;
+    display: grid;
+    gap: 0.4rem;
+  }
+</style>

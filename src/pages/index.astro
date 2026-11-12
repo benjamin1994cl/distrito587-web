@@ -1,0 +1,474 @@
+---
+import Base from '../layouts/Base.astro';
+import Pie from '../components/Pie.astro';
+import FotoProducto from '../components/FotoProducto.astro';
+import logo from '../assets/marca/distrito587-logo-color.svg';
+import carta from '../data/carta.json';
+import { precio, url } from '../lib/formato';
+import {
+  datos,
+  direccionCorta,
+  jsonLdRestaurant,
+  urlComoLlegar,
+  urlInstagram,
+  urlMapaEmbebido,
+  urlWhatsapp,
+} from '../lib/local';
+
+const categoria = (id: string) => carta.categorias.find((c) => c.id === id);
+const burgers = categoria('hamburguesas')?.productos ?? [];
+const tocomples = categoria('tocomples');
+const listas = ['papas-caseras', 'agregados', 'salsas', 'bebidas']
+  .map(categoria)
+  .filter((c) => c !== undefined);
+const extraSmash = categoria('agregados')?.productos.find((p) => /smash/i.test(p.nombre));
+const desde = Math.min(...burgers.map((b) => b.precio));
+const anchoLogo = 560;
+const altoLogo = Math.round((anchoLogo * logo.height) / logo.width);
+---
+
+<Base
+  titulo="Distrito 587 · Smash burgers en Osorno"
+  descripcion={`Smash burgers con pan de papa y papas caseras de regalo, desde ${precio(desde)}. Tocomples, agregados y salsas de la casa en ${direccionCorta}.`}
+  jsonLd={jsonLdRestaurant()}
+>
+  <header class="hero">
+    <div class="contenedor hero__grid">
+      <h1 class="hero__logo">
+        <img
+          src={logo.src}
+          width={anchoLogo}
+          height={altoLogo}
+          alt="Distrito 587, Smash & Fries"
+          fetchpriority="high"
+          decoding="async"
+        />
+      </h1>
+      <div class="hero__texto">
+        <p class="hero__eslogan">Smash burgers en Osorno</p>
+        <p class="hero__datos">
+          <span>{direccionCorta}</span>
+          {
+            datos.horario.length > 0 && (
+              <span>
+                {datos.horario.map((h) => `${h.etiqueta} ${h.abre} a ${h.cierra}`).join(' · ')}
+              </span>
+            )
+          }
+        </p>
+        <div class="hero__botones">
+          <a class="boton boton--negro" href={url('carta')}>Ver carta</a>
+          <a class="boton boton--claro" href={urlComoLlegar} rel="noopener">Cómo llegar</a>
+          {urlWhatsapp && <a class="boton boton--claro" href={urlWhatsapp} rel="noopener">Pedir por WhatsApp</a>}
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <p class="promesa">
+    <span class="contenedor">Todas las burgers con papas caseras de regalo</span>
+  </p>
+
+  <main id="contenido">
+    <section class="seccion contenedor" aria-labelledby="t-burgers">
+      <div class="seccion__titulo">
+        <h2 id="t-burgers">Hamburguesas</h2>
+        <p>
+          100% smash, pan de papa.{extraSmash && ` Agranda tu burger con otra smash por ${precio(extraSmash.precio)}.`}
+        </p>
+      </div>
+      <ul class="burgers">
+        {
+          burgers.map((b, i) => (
+            <li class="burger">
+              <FotoProducto imagen={b.imagen} alt={b.nombre} />
+              <span class="burger__numero" aria-hidden="true">
+                {String(i + 1).padStart(2, '0')}
+              </span>
+              <h3>{b.nombre}</h3>
+              <p class="burger__desc">{b.descripcion}</p>
+              <p class="precio burger__precio">{precio(b.precio)}</p>
+            </li>
+          ))
+        }
+      </ul>
+    </section>
+
+    {
+      tocomples && (
+        <section class="seccion contenedor" aria-labelledby="t-tocomples">
+          <div class="seccion__titulo">
+            <h2 id="t-tocomples">Tocomples</h2>
+            <p>Los clásicos de siempre, en pan de papa.</p>
+          </div>
+          <ul class="tocomples">
+            {tocomples.productos.map((t) => (
+              <li>
+                <div>
+                  <h3>{t.nombre}</h3>
+                  <p>{t.descripcion}</p>
+                </div>
+                <p class="precio">{precio(t.precio)}</p>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )
+    }
+
+    <section class="seccion contenedor" aria-labelledby="t-extras">
+      <div class="seccion__titulo">
+        <h2 id="t-extras">Para acompañar</h2>
+      </div>
+      <div class="listas">
+        {
+          listas.map((c) => (
+            <div class="lista">
+              <h3>{c.nombre}</h3>
+              <ul>
+                {c.productos.map((p) => (
+                  <li>
+                    <span>
+                      {p.nombre}
+                      {p.descripcion && <small>{p.descripcion}</small>}
+                    </span>
+                    <span class="precio">{precio(p.precio)}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))
+        }
+      </div>
+      <p class="seccion__mas">
+        <a class="boton boton--amarillo" href={url('carta')}>Ver la carta completa</a>
+      </p>
+    </section>
+
+    <section class="seccion local" aria-labelledby="t-local">
+      <div class="contenedor local__grid">
+        <div class="local__texto">
+          <h2 id="t-local">El local</h2>
+          <p class="local__direccion">{datos.direccion.calle}<br />{datos.direccion.comuna}, {datos.direccion.region}</p>
+          {
+            datos.horario.length > 0 ? (
+              <table class="local__horario">
+                <caption class="visualmente-oculto">Horario de atención</caption>
+                <tbody>
+                  {datos.horario.map((h) => (
+                    <tr>
+                      <th scope="row">{h.etiqueta}</th>
+                      <td>
+                        {h.abre} a {h.cierra}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            ) : (
+              <p>
+                Revisa el horario del día en nuestro <a href={urlInstagram} rel="noopener">Instagram @{datos.instagram}</a>.
+              </p>
+            )
+          }
+          <div class="local__botones">
+            <a class="boton boton--amarillo" href={urlComoLlegar} rel="noopener">Cómo llegar</a>
+            {urlWhatsapp && <a class="boton boton--borde" href={urlWhatsapp} rel="noopener">WhatsApp</a>}
+            <a class="boton boton--borde" href={urlInstagram} rel="noopener">Instagram</a>
+          </div>
+        </div>
+        <div class="local__mapa">
+          <iframe
+            src={urlMapaEmbebido}
+            title={`Mapa de ${datos.nombre} en ${direccionCorta}`}
+            loading="lazy"
+            referrerpolicy="no-referrer-when-downgrade"
+            width="600"
+            height="420"></iframe>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <Pie />
+</Base>
+
+<style>
+  .hero {
+    background: var(--crema);
+    color: #000;
+    padding-block: clamp(2rem, 6vw, 4.5rem) clamp(2rem, 5vw, 3.5rem);
+  }
+
+  .hero__grid {
+    display: grid;
+    gap: clamp(1.5rem, 4vw, 3rem);
+    align-items: center;
+  }
+
+  @media (min-width: 56rem) {
+    .hero__grid {
+      grid-template-columns: 1.2fr 1fr;
+    }
+  }
+
+  .hero__logo img {
+    width: min(100%, 35rem);
+    height: auto;
+    margin-inline: auto;
+  }
+
+  .hero__eslogan {
+    font-family: var(--display);
+    font-size: clamp(2.5rem, 7vw, 4rem);
+    line-height: 0.95;
+  }
+
+  .hero__datos {
+    display: flex;
+    flex-direction: column;
+    margin-top: 0.75rem;
+    font-weight: 600;
+    font-size: 1.125rem;
+  }
+
+  .hero__botones {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-top: 1.5rem;
+  }
+
+  .promesa {
+    background: var(--d587-amarillo);
+    color: #000;
+    font-family: var(--display);
+    font-size: clamp(1.6rem, 4.5vw, 2.6rem);
+    line-height: 1.05;
+    text-align: center;
+    padding-block: 1rem;
+  }
+
+  .promesa span {
+    display: block;
+  }
+
+  .seccion {
+    padding-block: clamp(3rem, 8vw, 5rem) 0;
+  }
+
+  .seccion__titulo {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.5rem 1.25rem;
+    margin-bottom: 1.75rem;
+  }
+
+  .seccion__titulo h2 {
+    font-size: clamp(2.75rem, 8vw, 4.5rem);
+    color: var(--d587-rojo);
+  }
+
+  .seccion__titulo p {
+    color: var(--texto-suave);
+  }
+
+  .seccion__mas {
+    margin-top: 2rem;
+  }
+
+  /* Burgers */
+  .burgers {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 16rem), 1fr));
+  }
+
+  .burger {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    padding: 1.4rem 1.25rem 1.25rem;
+    background: var(--fondo-alto);
+    border: 1px solid var(--borde);
+    border-radius: var(--radio);
+    overflow: hidden;
+  }
+
+  .burger::before {
+    content: '';
+    position: absolute;
+    inset: 0 0 auto;
+    height: 4px;
+    background: linear-gradient(90deg, var(--d587-naranja), var(--d587-rojo));
+  }
+
+  .burger__numero {
+    font-family: var(--display);
+    font-size: 1.1rem;
+    color: var(--d587-naranja);
+  }
+
+  .burger h3 {
+    font-size: 2rem;
+  }
+
+  .burger__desc {
+    color: var(--texto-suave);
+    flex: 1;
+  }
+
+  .burger__precio {
+    font-size: 2.1rem;
+  }
+
+  .burger :global(.foto-producto img) {
+    width: 100%;
+    height: auto;
+    border-radius: calc(var(--radio) - 4px);
+  }
+
+  /* Tocomples */
+  .tocomples {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 1rem;
+  }
+
+  @media (min-width: 48rem) {
+    .tocomples {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+
+  .tocomples li {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    padding: 1.1rem 1.25rem;
+    border: 1px solid var(--borde);
+    border-left: 4px solid var(--d587-amarillo);
+    border-radius: var(--radio);
+  }
+
+  .tocomples h3 {
+    font-size: 1.75rem;
+  }
+
+  .tocomples li p:not(.precio) {
+    color: var(--texto-suave);
+  }
+
+  .tocomples .precio {
+    font-size: 1.9rem;
+  }
+
+  /* Listas de acompañamientos */
+  .listas {
+    display: grid;
+    gap: 2rem 3rem;
+  }
+
+  @media (min-width: 48rem) {
+    .listas {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+
+  .lista h3 {
+    font-size: 1.9rem;
+    color: var(--d587-naranja);
+    margin-bottom: 0.5rem;
+  }
+
+  .lista ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .lista li {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 1rem;
+    padding-block: 0.55rem;
+    border-bottom: 1px dashed var(--borde);
+  }
+
+  .lista small {
+    display: block;
+    color: var(--texto-suave);
+    font-size: 0.9rem;
+  }
+
+  .lista .precio {
+    font-size: 1.45rem;
+  }
+
+  /* Local */
+  .local {
+    margin-top: clamp(3rem, 8vw, 5rem);
+    padding-bottom: clamp(3rem, 8vw, 5rem);
+    background: var(--fondo-alto);
+  }
+
+  .local__grid {
+    display: grid;
+    gap: 2rem;
+    align-items: center;
+  }
+
+  @media (min-width: 56rem) {
+    .local__grid {
+      grid-template-columns: 1fr 1.3fr;
+    }
+  }
+
+  .local h2 {
+    font-size: clamp(2.75rem, 8vw, 4.5rem);
+    color: var(--d587-rojo);
+    margin-bottom: 1rem;
+  }
+
+  .local__direccion {
+    font-size: 1.3rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+  }
+
+  .local__horario {
+    border-collapse: collapse;
+    margin-bottom: 1rem;
+  }
+
+  .local__horario th,
+  .local__horario td {
+    text-align: left;
+    padding: 0.3rem 1.5rem 0.3rem 0;
+  }
+
+  .local__botones {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-top: 1.5rem;
+  }
+
+  .local__mapa iframe {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 10 / 7;
+    border: 0;
+    border-radius: var(--radio);
+    background: #222;
+  }
+</style>

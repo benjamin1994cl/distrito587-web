@@ -1,0 +1,244 @@
+{
+  "categorias": [
+    {
+      "id": "hamburguesas",
+      "nombre": "Hamburguesas",
+      "productos": [
+        {
+          "nombre": "Cucumelo Onion's",
+          "descripcion": "Pan de papa, smash burger, queso cheddar, champiñones salteados en mantequilla, cebolla caramelizada y salsa District.",
+          "precio": 6990,
+          "imagen": "cucumelo-onions"
+        },
+        {
+          "nombre": "Infarto Seguro",
+          "descripcion": "Pan de papa, smash burger, queso, tocino, huevo frito y cebolla frita.",
+          "precio": 7990,
+          "imagen": "infarto-seguro"
+        },
+        {
+          "nombre": "Simplesita pero Hermosa",
+          "descripcion": "Pan de papa, smash burger, queso cheddar y salsa District.",
+          "precio": 6990,
+          "imagen": "simplesita-pero-hermosa"
+        },
+        {
+          "nombre": "Distrito 587",
+          "descripcion": "Pan de papa, smash burger, queso cheddar, tomate, lechuga, pepinillos y salsa District.",
+          "precio": 6990,
+          "imagen": "distrito-587"
+        },
+        {
+          "nombre": "Cuarto Love",
+          "descripcion": "Pan de papa, smash burger, mayo District, queso cheddar, ketchup, cebolla en cuadritos y pepinillos.",
+          "precio": 6990,
+          "imagen": "cuarto-love"
+        },
+        {
+          "nombre": "Azurra Nostra",
+          "descripcion": "Pan de papa, smash burger, palta, tomate y mayo a elección.",
+          "precio": 6990,
+          "imagen": "azurra-nostra"
+        },
+        {
+          "nombre": "Garotta Cheese",
+          "descripcion": "Pan de papa, smash burger, palta, queso y mayonesa.",
+          "precio": 6990,
+          "imagen": "garotta-cheese"
+        },
+        {
+          "nombre": "Mega Bacon",
+          "descripcion": "Pan de papa, smash burger, queso cheddar, tocino, cebolla frita y salsa de tocineta.",
+          "precio": 6990,
+          "imagen": "mega-bacon"
+        }
+      ]
+    },
+    {
+      "id": "tocomples",
+      "nombre": "Tocomples",
+      "productos": [
+        {
+          "nombre": "Italianni",
+          "descripcion": "Pan de papa, salchicha, palta, tomate y mayo a elección.",
+          "precio": 3990,
+          "imagen": "italianni"
+        },
+        {
+          "nombre": "Paltón",
+          "descripcion": "Pan de papa, salchicha, palta y mayo a elección.",
+          "precio": 3490,
+          "imagen": "palton"
+        },
+        {
+          "nombre": "Tomatón",
+          "descripcion": "Pan de papa, salchicha, tomate y mayo a elección.",
+          "precio": 3290,
+          "imagen": "tomaton"
+        },
+        {
+          "nombre": "Incompleto",
+          "descripcion": "Pan de papa, salchicha y mayo a elección.",
+          "precio": 2990,
+          "imagen": "incompleto"
+        }
+      ]
+    },
+    {
+      "id": "papas-caseras",
+      "nombre": "Papas caseras",
+      "productos": [
+        {
+          "nombre": "Papas Gran Doli",
+          "descripcion": "La medida para compartir. Incluye 1 salsa de regalo.",
+          "precio": 4990,
+          "imagen": null
+        },
+        {
+          "nombre": "Papas Intermedio",
+          "descripcion": "Incluye 1 salsa de regalo.",
+          "precio": 3690,
+          "imagen": null
+        },
+        {
+          "nombre": "Papas Piola",
+          "descripcion": "Incluye 1 salsa de regalo.",
+          "precio": 1990,
+          "imagen": null
+        }
+      ]
+    },
+    {
+      "id": "agregados",
+      "nombre": "Agregados",
+      "productos": [
+        {
+          "nombre": "Smash burger extra",
+          "descripcion": "Agranda tu burger con otra smash.",
+          "precio": 1990,
+          "imagen": null
+        },
+        {
+          "nombre": "Salchicha Mödinger",
+          "descripcion": "",
+          "precio": 1990,
+          "imagen": null
+        },
+        {
+          "nombre": "Longaniza Mödinger",
+          "descripcion": "",
+          "precio": 2490,
+          "imagen": null
+        },
+        {
+          "nombre": "Tocino",
+          "descripcion": "",
+          "precio": 1990,
+          "imagen": null
+        },
+        {
+          "nombre": "Pollo salteado",
+          "descripcion": "",
+          "precio": 2690,
+          "imagen": null
+        },
+        {
+          "nombre": "Champiñones",
+          "descripcion": "",
+          "precio": 2490,
+          "imagen": null
+        },
+        {
+          "nombre": "Huevo frito",
+          "descripcion": "",
+          "precio": 1290,
+          "imagen": null
+        },
+        {
+          "nombre": "Queso fundido",
+          "descripcion": "",
+          "precio": 1690,
+          "imagen": null
+        },
+        {
+          "nombre": "Queso rallado",
+          "descripcion": "",
+          "precio": 1690,
+          "imagen": null
+        }
+      ]
+    },
+    {
+      "id": "salsas",
+      "nombre": "Salsas",
+      "productos": [
+        {
+          "nombre": "Mayo Distrito",
+          "descripcion": "",
+          "precio": 590,
+          "imagen": null
+        },
+        {
+          "nombre": "Mayo Cilantro",
+          "descripcion": "",
+          "precio": 590,
+          "imagen": null
+        },
+        {
+          "nombre": "Mayo Ajo",
+          "descripcion": "",
+          "precio": 590,
+          "imagen": null
+        },
+        {
+          "nombre": "Salsa District",
+          "descripcion": "",
+          "precio": 590,
+          "imagen": null
+        },
+        {
+          "nombre": "Salsa Queso Cheddar Premium",
+          "descripcion": "",
+          "precio": 590,
+          "imagen": null
+        },
+        {
+          "nombre": "Salsa Tocineta",
+          "descripcion": "",
+          "precio": 590,
+          "imagen": null
+        }
+      ]
+    },
+    {
+      "id": "bebidas",
+      "nombre": "Bebidas",
+      "productos": [
+        {
+          "nombre": "Bebida en lata 350 cc",
+          "descripcion": "",
+          "precio": 1990,
+          "imagen": null
+        },
+        {
+          "nombre": "Jugo natural 1/2 lt",
+          "descripcion": "",
+          "precio": 2990,
+          "imagen": null
+        },
+        {
+          "nombre": "Vaso jugo Watt's 1/2 lt",
+          "descripcion": "",
+          "precio": 1490,
+          "imagen": null
+        },
+        {
+          "nombre": "Agua mineral 1/2 lt",
+          "descripcion": "",
+          "precio": 1490,
+          "imagen": null
+        }
+      ]
+    }
+  ]
+}

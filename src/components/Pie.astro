@@ -1,0 +1,82 @@
+---
+import isotipo from '../assets/marca/distrito587-isotipo-blanco.svg';
+import { datos, direccionCorta, urlInstagram } from '../lib/local';
+import { url } from '../lib/formato';
+---
+
+<footer class="pie">
+  <div class="contenedor pie__grid">
+    <a href={url()} class="pie__marca">
+      <img src={isotipo.src} width="56" height={Math.round((56 * isotipo.height) / isotipo.width)} alt="" loading="lazy" decoding="async" />
+      <span>{datos.nombre}</span>
+    </a>
+    <div>
+      <p>{direccionCorta}</p>
+      {
+        datos.horario.length > 0 ? (
+          <ul class="pie__horario">
+            {datos.horario.map((h) => (
+              <li>
+                {h.etiqueta}: {h.abre} a {h.cierra}
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p>Horario en Instagram</p>
+        )
+      }
+    </div>
+    <div class="pie__links">
+      <a href={urlInstagram} rel="noopener">Instagram @{datos.instagram}</a>
+      <a href={url('carta')}>Ver la carta</a>
+    </div>
+  </div>
+</footer>
+
+<style>
+  .pie {
+    border-top: 1px solid var(--borde);
+    padding-block: 2.5rem 3rem;
+    color: var(--texto-suave);
+    font-size: 0.95rem;
+  }
+
+  .pie__grid {
+    display: grid;
+    gap: 1.5rem;
+  }
+
+  @media (min-width: 48rem) {
+    .pie__grid {
+      grid-template-columns: auto 1fr auto;
+      align-items: center;
+      gap: 2.5rem;
+    }
+  }
+
+  .pie__marca {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    color: #fff;
+    text-decoration: none;
+    font-family: var(--display);
+    font-size: 1.75rem;
+  }
+
+  .pie__horario {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .pie__links {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .pie__links a {
+    padding-block: 0.25rem;
+  }
+</style>

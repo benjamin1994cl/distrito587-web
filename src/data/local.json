@@ -1,0 +1,24 @@
+{
+  "nombre": "Distrito 587",
+  "eslogan": "Smash & Fries",
+  "promesa": "Todas las burgers con papas caseras de regalo",
+  "descripcion": "Hamburguesería smash en Osorno. Burgers con pan de papa y papas fritas caseras de regalo, tocomples, agregados y salsas de la casa.",
+  "direccion": {
+    "calle": "Freire esquina Ramírez",
+    "comuna": "Osorno",
+    "region": "Los Lagos",
+    "codigoPais": "CL"
+  },
+  "mapa": {
+    "consulta": "Freire con Ramírez, Osorno, Chile"
+  },
+  "geo": null,
+  "horario": [],
+  "whatsapp": null,
+  "telefono": null,
+  "instagram": "distrito587osorno",
+  "delivery": [],
+  "pagos": [],
+  "cocina": ["Hamburguesas", "Completos", "Comida rápida"],
+  "rangoPrecios": "$"
+}

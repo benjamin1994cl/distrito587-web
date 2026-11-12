@@ -1,0 +1,35 @@
+categoria,orden,nombre,descripcion,precio,disponible,imagen
+Hamburguesas,1,Cucumelo Onion's,"Pan de papa, smash burger, queso cheddar, champiñones salteados en mantequilla, cebolla caramelizada y salsa District.",6990,SÍ,cucumelo-onions
+Hamburguesas,2,Infarto Seguro,"Pan de papa, smash burger, queso, tocino, huevo frito y cebolla frita.",7990,SÍ,infarto-seguro
+Hamburguesas,3,Simplesita pero Hermosa,"Pan de papa, smash burger, queso cheddar y salsa District.",6990,SÍ,simplesita-pero-hermosa
+Hamburguesas,4,Distrito 587,"Pan de papa, smash burger, queso cheddar, tomate, lechuga, pepinillos y salsa District.",6990,SÍ,distrito-587
+Hamburguesas,5,Cuarto Love,"Pan de papa, smash burger, mayo District, queso cheddar, ketchup, cebolla en cuadritos y pepinillos.",6990,SÍ,cuarto-love
+Hamburguesas,6,Azurra Nostra,"Pan de papa, smash burger, palta, tomate y mayo a elección.",6990,SÍ,azurra-nostra
+Hamburguesas,7,Garotta Cheese,"Pan de papa, smash burger, palta, queso y mayonesa.",6990,SÍ,garotta-cheese
+Hamburguesas,8,Mega Bacon,"Pan de papa, smash burger, queso cheddar, tocino, cebolla frita y salsa de tocineta.",6990,SÍ,mega-bacon
+Tocomples,1,Italianni,"Pan de papa, salchicha, palta, tomate y mayo a elección.",3990,SÍ,italianni
+Tocomples,2,Paltón,"Pan de papa, salchicha, palta y mayo a elección.",3490,SÍ,palton
+Tocomples,3,Tomatón,"Pan de papa, salchicha, tomate y mayo a elección.",3290,SÍ,tomaton
+Tocomples,4,Incompleto,"Pan de papa, salchicha y mayo a elección.",2990,SÍ,incompleto
+Papas caseras,1,Papas Gran Doli,La medida para compartir. Incluye 1 salsa de regalo.,4990,SÍ,
+Papas caseras,2,Papas Intermedio,Incluye 1 salsa de regalo.,3690,SÍ,
+Papas caseras,3,Papas Piola,Incluye 1 salsa de regalo.,1990,SÍ,
+Agregados,1,Smash burger extra,Agranda tu burger con otra smash.,1990,SÍ,
+Agregados,2,Salchicha Mödinger,,1990,SÍ,
+Agregados,3,Longaniza Mödinger,,2490,SÍ,
+Agregados,4,Tocino,,1990,SÍ,
+Agregados,5,Pollo salteado,,2690,SÍ,
+Agregados,6,Champiñones,,2490,SÍ,
+Agregados,7,Huevo frito,,1290,SÍ,
+Agregados,8,Queso fundido,,1690,SÍ,
+Agregados,9,Queso rallado,,1690,SÍ,
+Salsas,1,Mayo Distrito,,590,SÍ,
+Salsas,2,Mayo Cilantro,,590,SÍ,
+Salsas,3,Mayo Ajo,,590,SÍ,
+Salsas,4,Salsa District,,590,SÍ,
+Salsas,5,Salsa Queso Cheddar Premium,,590,SÍ,
+Salsas,6,Salsa Tocineta,,590,SÍ,
+Bebidas,1,Bebida en lata 350 cc,,1990,SÍ,
+Bebidas,2,Jugo natural 1/2 lt,,2990,SÍ,
+Bebidas,3,Vaso jugo Watt's 1/2 lt,,1490,SÍ,
+Bebidas,4,Agua mineral 1/2 lt,,1490,SÍ,

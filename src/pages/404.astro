@@ -1,0 +1,51 @@
+---
+import Base from '../layouts/Base.astro';
+import logo from '../assets/marca/distrito587-logo-blanco.svg';
+import { url } from '../lib/formato';
+---
+
+<Base
+  titulo="Página no encontrada · Distrito 587"
+  descripcion="Esta página no existe. Revisa la carta de Distrito 587."
+  ruta="404"
+  noIndexar
+>
+  <main id="contenido" class="error">
+    <img src={logo.src} width="320" height={Math.round((320 * logo.height) / logo.width)} alt="Distrito 587, Smash & Fries" />
+    <h1>Esta página se nos quemó</h1>
+    <p>No encontramos lo que buscabas, pero la carta sigue aquí.</p>
+    <div class="error__botones">
+      <a class="boton boton--amarillo" href={url('carta')}>Ver la carta</a>
+      <a class="boton boton--borde" href={url()}>Ir al inicio</a>
+    </div>
+  </main>
+</Base>
+
+<style>
+  .error {
+    min-height: 100svh;
+    display: grid;
+    place-content: center;
+    justify-items: center;
+    gap: 1.25rem;
+    padding: 2rem var(--gutter);
+    text-align: center;
+  }
+
+  .error img {
+    width: min(100%, 20rem);
+    height: auto;
+  }
+
+  .error h1 {
+    font-size: clamp(2.5rem, 9vw, 4rem);
+    color: var(--d587-rojo);
+  }
+
+  .error__botones {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.75rem;
+  }
+</style>
