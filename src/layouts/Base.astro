@@ -2,6 +2,8 @@
 import '../styles/global.css';
 import { url, urlAbsoluta } from '../lib/formato';
 import { datos } from '../lib/local';
+import bebas from '@fontsource/bebas-neue/files/bebas-neue-latin-400-normal.woff2?url';
+import barlow600 from '@fontsource/barlow/files/barlow-latin-600-normal.woff2?url';
 
 interface Props {
   titulo: string;
@@ -26,6 +28,9 @@ const imagenOg = urlAbsoluta('og-distrito587.png');
     <meta name="description" content={descripcion} />
     {!noIndexar && <link rel="canonical" href={canonical} />}
     {noIndexar && <meta name="robots" content="noindex" />}
+
+    <link rel="preload" href={bebas} as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href={barlow600} as="font" type="font/woff2" crossorigin />
 
     <meta name="theme-color" content="#000000" />
     <link rel="icon" href={url('favicon.ico')} sizes="32x32" />

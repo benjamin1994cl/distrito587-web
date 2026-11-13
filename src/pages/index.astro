@@ -2,7 +2,7 @@
 import Base from '../layouts/Base.astro';
 import Pie from '../components/Pie.astro';
 import FotoProducto from '../components/FotoProducto.astro';
-import logo from '../assets/marca/distrito587-logo-color.svg';
+import LogoArmado from '../components/LogoArmado.astro';
 import carta from '../data/carta.json';
 import { precio, url } from '../lib/formato';
 import {
@@ -23,8 +23,6 @@ const listas = ['papas-caseras', 'agregados', 'salsas', 'bebidas']
   .filter((c) => c !== undefined);
 const extraSmash = categoria('agregados')?.productos.find((p) => /smash/i.test(p.nombre));
 const desde = Math.min(...burgers.map((b) => b.precio));
-const anchoLogo = 560;
-const altoLogo = Math.round((anchoLogo * logo.height) / logo.width);
 ---
 
 <Base
@@ -32,18 +30,45 @@ const altoLogo = Math.round((anchoLogo * logo.height) / logo.width);
   descripcion={`Smash burgers con pan de papa y papas caseras de regalo, desde ${precio(desde)}. Tocomples, agregados y salsas de la casa en ${direccionCorta}.`}
   jsonLd={jsonLdRestaurant()}
 >
-  <header class="hero">
+  <header class="hero oscuro">
+    <picture class="hero__poster">
+      <source media="(max-width: 700px)" srcset={url('hero/hero-poster-movil.webp')} />
+      <img
+        src={url('hero/hero-poster.webp')}
+        width="1280"
+        height="704"
+        alt=""
+        fetchpriority="high"
+        decoding="async"
+      />
+    </picture>
+    <video class="hero__video" autoplay muted loop playsinline preload="metadata" aria-hidden="true">
+      <source src={url('hero/hero-movil.mp4')} type="video/mp4" media="(max-width: 700px)" />
+      <source src={url('hero/hero.webm')} type="video/webm" />
+      <source src={url('hero/hero.mp4')} type="video/mp4" />
+    </video>
+    <script is:inline>
+      (function () {
+        var v = document.querySelector('.hero__video');
+        if (!v) return;
+        var mq = matchMedia('(prefers-reduced-motion: reduce)');
+        if (mq.matches) {
+          v.removeAttribute('autoplay');
+          v.preload = 'none';
+          v.pause();
+        }
+        mq.addEventListener('change', function (e) {
+          if (e.matches) {
+            v.pause();
+          } else {
+            v.play().catch(function () {});
+          }
+        });
+      })();
+    </script>
+    <div class="hero__velo"></div>
     <div class="contenedor hero__grid">
-      <h1 class="hero__logo">
-        <img
-          src={logo.src}
-          width={anchoLogo}
-          height={altoLogo}
-          alt="Distrito 587, Smash & Fries"
-          fetchpriority="high"
-          decoding="async"
-        />
-      </h1>
+      <LogoArmado />
       <div class="hero__texto">
         <p class="hero__eslogan">Smash burgers en Osorno</p>
         <p class="hero__datos">
@@ -57,9 +82,9 @@ const altoLogo = Math.round((anchoLogo * logo.height) / logo.width);
           }
         </p>
         <div class="hero__botones">
-          <a class="boton boton--negro" href={url('carta')}>Ver carta</a>
-          <a class="boton boton--claro" href={urlComoLlegar} rel="noopener">Cómo llegar</a>
-          {urlWhatsapp && <a class="boton boton--claro" href={urlWhatsapp} rel="noopener">Pedir por WhatsApp</a>}
+          <a class="boton boton--amarillo" href={url('carta')}>Ver carta</a>
+          <a class="boton boton--borde" href={urlComoLlegar} rel="noopener">Cómo llegar</a>
+          {urlWhatsapp && <a class="boton boton--borde" href={urlWhatsapp} rel="noopener">Pedir por WhatsApp</a>}
         </div>
       </div>
     </div>
@@ -67,7 +92,10 @@ const altoLogo = Math.round((anchoLogo * logo.height) / logo.width);
 
   <main id="contenido">
     <p class="promesa">
-      <span class="contenedor">Todas las burgers con papas caseras de regalo</span>
+      <span class="promesa__pista">
+        <span>Todas las burgers con papas caseras de regalo</span>
+        {Array.from({ length: 7 }, () => <span aria-hidden="true">Todas las burgers con papas caseras de regalo</span>)}
+      </span>
     </p>
 
     <section class="seccion contenedor" aria-labelledby="t-burgers">
@@ -195,12 +223,69 @@ const altoLogo = Math.round((anchoLogo * logo.height) / logo.width);
 
 <style>
   .hero {
-    background: var(--crema);
-    color: #000;
+    position: relative;
+    display: grid;
+    align-items: center;
+    min-height: min(92vh, 46rem);
+    overflow: hidden;
+    background: #1a0d08;
+    color: #fff;
     padding-block: clamp(2rem, 6vw, 4.5rem) clamp(2rem, 5vw, 3.5rem);
   }
 
+  .hero__poster,
+  .hero__video {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+  }
+
+  .hero__poster img,
+  .hero__video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .hero__velo {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    background:
+      linear-gradient(90deg, rgb(0 0 0 / 0.78) 0%, rgb(0 0 0 / 0.45) 55%, rgb(0 0 0 / 0.2) 100%),
+      linear-gradient(0deg, rgb(0 0 0 / 0.6), transparent 40%);
+  }
+
+  /* Grano de película */
+  .hero__velo::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    opacity: 0.22;
+    mix-blend-mode: overlay;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E");
+  }
+
+  /* Con movimiento reducido no hay video: queda el póster */
+  @media (prefers-reduced-motion: reduce) {
+    .hero__video {
+      display: none;
+    }
+  }
+
+  /* En móvil el contenido se ancla arriba: si el texto cambia de alto al cargar la fuente, el logo no se mueve */
+  @media (max-width: 55.99rem) {
+    .hero {
+      align-items: start;
+      padding-top: clamp(3rem, 20vh, 9rem);
+    }
+  }
+
   .hero__grid {
+    position: relative;
+    z-index: 2;
     display: grid;
     gap: clamp(1.5rem, 4vw, 3rem);
     align-items: center;
@@ -212,16 +297,11 @@ const altoLogo = Math.round((anchoLogo * logo.height) / logo.width);
     }
   }
 
-  .hero__logo img {
-    width: min(100%, 35rem);
-    height: auto;
-    margin-inline: auto;
-  }
-
   .hero__eslogan {
     font-family: var(--display);
     font-size: clamp(2.5rem, 7vw, 4rem);
     line-height: 0.95;
+    text-shadow: 0 2px 18px rgb(0 0 0 / 0.6);
   }
 
   .hero__datos {
@@ -230,6 +310,7 @@ const altoLogo = Math.round((anchoLogo * logo.height) / logo.width);
     margin-top: 0.75rem;
     font-weight: 600;
     font-size: 1.125rem;
+    color: #ffe6c7;
   }
 
   .hero__botones {
@@ -239,6 +320,45 @@ const altoLogo = Math.round((anchoLogo * logo.height) / logo.width);
     margin-top: 1.5rem;
   }
 
+  /* Fondo oscuro: el foco global (amarillo) se ve bien, se anula la regla para fondos claros */
+  .hero :focus-visible {
+    outline-color: var(--d587-amarillo);
+  }
+
+  .hero .boton--borde {
+    border-color: #fff;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .hero__texto > * {
+      animation: subir 0.6s ease-out both;
+    }
+
+    .hero__texto > .hero__eslogan {
+      animation-delay: 3.1s;
+    }
+
+    .hero__texto > .hero__datos {
+      animation-delay: 3.25s;
+    }
+
+    .hero__texto > .hero__botones {
+      animation-delay: 3.4s;
+    }
+
+    .hero__texto:focus-within > * {
+      animation: none;
+    }
+  }
+
+  @keyframes subir {
+    from {
+      opacity: 0;
+      transform: translateY(1rem);
+    }
+  }
+
+  /* Marquesina: una sola frase accesible, el resto son copias decorativas */
   .promesa {
     background: var(--d587-amarillo);
     color: #000;
@@ -247,10 +367,54 @@ const altoLogo = Math.round((anchoLogo * logo.height) / logo.width);
     line-height: 1.05;
     text-align: center;
     padding-block: 1rem;
+    overflow: hidden;
   }
 
-  .promesa span {
+  .promesa__pista {
     display: block;
+    padding-inline: var(--gutter);
+  }
+
+  .promesa__pista > [aria-hidden] {
+    display: none;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .promesa {
+      white-space: nowrap;
+    }
+
+    .promesa__pista {
+      display: flex;
+      width: max-content;
+      padding-inline: 0;
+      animation: marquesina 40s linear infinite;
+    }
+
+    .promesa__pista > [aria-hidden] {
+      display: inline;
+    }
+
+    .promesa__pista > span {
+      padding-inline: 1.25rem;
+    }
+
+    .promesa__pista > span::after {
+      content: '✦';
+      content: '✦' / '';
+      margin-left: 2.5rem;
+      color: var(--d587-rojo);
+    }
+
+    .promesa:hover .promesa__pista {
+      animation-play-state: paused;
+    }
+  }
+
+  @keyframes marquesina {
+    to {
+      transform: translateX(-50%);
+    }
   }
 
   .seccion {
@@ -298,6 +462,23 @@ const altoLogo = Math.round((anchoLogo * logo.height) / logo.width);
     border: 1px solid var(--borde);
     border-radius: var(--radio);
     overflow: hidden;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    @supports (animation-timeline: view()) {
+      .burger {
+        animation: aparecer linear both;
+        animation-timeline: view();
+        animation-range: entry 0% cover 30%;
+      }
+    }
+  }
+
+  @keyframes aparecer {
+    from {
+      opacity: 0;
+      transform: translateY(2rem) scale(0.97);
+    }
   }
 
   .burger::before {
