@@ -1,28 +1,36 @@
 ---
 // Borde temático con ambiente hamburguesa. Va como primer hijo de un bloque `.bloque` (position: relative).
 // Cada forma es una transición distinta de la portada:
-//   cuadrille    marquesina a Burgers: franja de papel cuadrillé rasgado
-//   queso        Burgers a Papas: queso cheddar que gotea (cuelga del bloque de abajo)
-//   papas        Papas a Tocomples: silueta de papas fritas
-//   mostaza      Tocomples a Extras: salpicadura de mostaza
-//   pan          Extras a Local: pan con semillas de sésamo (las semillas son huecos)
-//   salsa        Local a pie: salsa en zigzag, como sobre un completo
+//   dentado       Burgers a Papas: corte de papel de envoltorio, dientes en zigzag con el rojo de Papas (sube sobre Burgers)
+//   dentado-abajo marquesina a Burgers: el mismo corte, con el amarillo de la marquesina mordiendo hacia abajo
+//   papas         Papas a Tocomples: silueta de papas fritas
+//   ketchup       Tocomples a Extras: banda de ketchup rojo que cubre la unión, con gotas que cuelgan sobre el amarillo de Extras
+//   lechuga       Extras a Reseñas: hoja de lechuga rizada, dos tonos de verde y nervaduras
+//   mostaza       Reseñas a Preguntas: banda de mostaza que sale del crema y gotea sobre el rojo de Preguntas
+//   pan           Preguntas a Local: pan con semillas de sésamo (las semillas son huecos)
+//   dentado       Local a pie: el mismo corte de papel, en negro sobre el oscuro de Local
+// Goteos (ketchup, mostaza): salsa de color propio en dos capas (banda y gotas), cada una con máscara y brillo blanco
+// translúcido como capa de fondo. Las gotas crecen hacia abajo al entrar en pantalla (solo con soporte y sin reduce).
+// Lechuga: la máscara da la silueta y un segundo SVG (`--brillo`) pone las nervaduras.
 interface Props {
-  forma: 'cuadrille' | 'queso' | 'papas' | 'mostaza' | 'pan' | 'salsa';
+  forma: 'dentado' | 'dentado-abajo' | 'papas' | 'mostaza' | 'lechuga' | 'ketchup' | 'pan';
 }
 
 const { forma } = Astro.props;
 ---
 
-<div class={`borde borde--${forma}`} aria-hidden="true"></div>
+<div class={`borde borde--${forma}`} aria-hidden="true">
+  {(forma === 'ketchup' || forma === 'mostaza') && (<><span class="borde__banda"></span><span class="borde__gotas"></span></>)}
+</div>
 
 <style>
   .borde {
     position: absolute;
     left: 0;
     right: 0;
-    /* 1px de solape con el bloque: sin línea de costura */
-    bottom: calc(100% - 1px);
+    /* 3px de solape con el bloque: con DPR fraccional la fila del borde del bloque queda a medio cubrir, y el solape
+       la tapa con relleno sólido de la forma (con 1px quedaba una línea tenue de 5 a 13 niveles) */
+    bottom: calc(100% - 3px);
     background: var(--borde-color, currentColor);
     pointer-events: none;
   }
@@ -30,9 +38,9 @@ const { forma } = Astro.props;
   /* Formas que sobresalen hacia arriba: máscara SVG anclada abajo. El viewBox lleva 1px transparente arriba y,
      además, una segunda máscara recorta las 2 filas superiores: con DPR fraccional (1,25 o 2,625) el filtrado
      del tile no puede teñir la primera fila. */
-  .borde--cuadrille,
+  .borde--dentado,
   .borde--papas,
-  .borde--mostaza,
+  .borde--lechuga,
   .borde--pan {
     -webkit-mask: var(--forma) bottom left / var(--w) var(--h) repeat-x, linear-gradient(transparent 2px, #000 2px);
     mask: var(--forma) bottom left / var(--w) var(--h) repeat-x, linear-gradient(transparent 2px, #000 2px);
@@ -41,15 +49,11 @@ const { forma } = Astro.props;
     height: var(--h);
   }
 
-  /* Papel cuadrillé rasgado, con el gris del papel de Burgers */
-  .borde--cuadrille {
-    --forma: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 -1 140 17'%3E%3Cpath d='M0 16V6L8 3 15 7 24 2 33 6 41 3 52 7 61 2 70 5 80 3 90 7 101 2 111 6 120 3 131 6 140 4V16z'/%3E%3C/svg%3E");
-    --w: 140px;
-    --h: 17px;
-    background:
-      linear-gradient(rgb(0 0 0 / 0.28) 1px, transparent 1px) 0 0 / 8px 8px,
-      linear-gradient(90deg, rgb(0 0 0 / 0.28) 1px, transparent 1px) 0 0 / 8px 8px,
-      var(--borde-color);
+  /* Dentado de papel de envoltorio: zigzag chico y regular. Sube sobre Burgers con el rojo de Papas. */
+  .borde--dentado {
+    --forma: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 -1 16 13'%3E%3Cpath d='M0 12V11L8 1 16 11V12z'/%3E%3C/svg%3E");
+    --w: 16px;
+    --h: 13px;
   }
 
   /* Papas fritas en silueta sobre el fondo oscuro de Tocomples */
@@ -59,11 +63,96 @@ const { forma } = Astro.props;
     --h: 37px;
   }
 
-  /* Salpicadura de mostaza: ola gruesa con gotas sueltas */
+  /* Salsa que gotea (ketchup y mostaza): no usa el color del bloque. Una banda de salsa cubre la unión (onda espesa arriba,
+     fondo plano) y debajo cuelgan gotas de largo distinto, con cuello, cintura y bulbo. Son dos capas con su propia
+     máscara: .borde__banda (estática) y .borde__gotas (crece hacia abajo al entrar en pantalla). Brillo: un segundo SVG
+     blanco translúcido como capa de fondo, recortado por la misma máscara. */
+  .borde--ketchup,
   .borde--mostaza {
-    --forma: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 -1 120 35'%3E%3Cpath d='M0 34V20C14 8 30 8 46 18S80 26 96 16 112 12 120 20V34z'/%3E%3Ccircle cx='22' cy='5' r='3'/%3E%3Ccircle cx='68' cy='6' r='2.5'/%3E%3Ccircle cx='104' cy='8' r='2'/%3E%3C/svg%3E");
-    --w: 120px;
-    --h: 35px;
+    top: -14px;
+    bottom: auto;
+    height: 24px;
+    background: none;
+  }
+
+  .borde__banda,
+  .borde__gotas {
+    position: absolute;
+    left: 0;
+    right: 0;
+  }
+
+  .borde__banda {
+    top: 0;
+    height: 24px;
+    background: var(--banda-brillo) top left / var(--w) 24px repeat-x, var(--salsa);
+    /* Resguardo de costura: con DPR fraccionario la fila superior de la máscara se redondea y deja una línea tenue.
+       La onda empieza en y=4, así que los 2 px de arriba se cortan con una segunda máscara sin perder forma. */
+    -webkit-mask: var(--banda) top left / var(--w) 24px repeat-x, linear-gradient(transparent 2px, #000 2px);
+    -webkit-mask-composite: source-in;
+    mask: var(--banda) top left / var(--w) 24px repeat-x, linear-gradient(transparent 2px, #000 2px);
+    mask-composite: intersect;
+  }
+
+  /* arranca 6px dentro de la banda: franja sólida bajo ella, sin ventanas entre onda y gotas */
+  .borde__gotas {
+    top: 18px;
+    height: 42px;
+    transform-origin: top;
+    background: var(--gotas-brillo) top left / var(--w) 42px repeat-x, var(--salsa);
+    -webkit-mask: var(--gotas) top left / var(--w) 42px repeat-x;
+    mask: var(--gotas) top left / var(--w) 42px repeat-x;
+  }
+
+  .borde--ketchup {
+    --banda: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 24'%3E%3Cpath d='M0 5C22.5 5 27.5 9 50 9C72.5 9 77.5 4 100 4C122.5 4 127.5 8 150 8C172.5 8 177.5 5 200 5C222.5 5 227.5 9 250 9C272.5 9 277.5 5 300 5V24H0z'/%3E%3C/svg%3E");
+    --banda-brillo: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 24'%3E%3Cpath d='M9 10q11 -3 25 0M59 14q11 -3 25 0M109 9q11 -3 25 0M159 13q11 -3 25 0M209 10q11 -3 25 0M259 14q11 -3 25 0' fill='none' stroke='%23fff' stroke-opacity='.42' stroke-width='2.2' stroke-linecap='round'/%3E%3C/svg%3E");
+    --gotas: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 42'%3E%3Cpath d='M0 0H300V6H253C246 6 244 7 244 11C240.4 13.4 240.4 15.6 240.4 17.1A7.2 7.2 0 1 1 231.6 17.1C231.6 15.6 231.6 13.4 228 11C228 7 226 6 219 6H187C180 6 178 7 178 11C173.4 17.7 173.4 23.5 173.4 27.6A8.2 8.2 0 1 1 162.6 27.6C162.6 23.5 162.6 17.7 158 11C158 7 156 6 149 6H122C115 6 113 7 113 11C109 11.7 109 12.3 109 12.7A7.6 7.6 0 1 1 99 12.7C99 12.3 99 11.7 95 11C95 7 93 6 86 6H47C40 6 38 7 38 11C34.4 17.1 34.4 22.4 34.4 26.2A7.6 7.6 0 1 1 25.6 26.2C25.6 22.4 25.6 17.1 22 11C22 7 20 6 13 6H0z'/%3E%3C/svg%3E");
+    --gotas-brillo: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 42'%3E%3Cg fill='%23fff' fill-opacity='.5'%3E%3Cellipse cx='233.1' cy='22.1' rx='1.4' ry='2.7' transform='rotate(12 233.1 22.8)'/%3E%3Cellipse cx='164.7' cy='33' rx='1.6' ry='3.1' transform='rotate(12 164.7 33.8)'/%3E%3Crect x='164.8' y='13' width='2.2' height='11.6' rx='.7'/%3E%3Cellipse cx='101' cy='17.6' rx='1.5' ry='2.9' transform='rotate(12 101 18.4)'/%3E%3Cellipse cx='27' cy='31.6' rx='1.5' ry='2.9' transform='rotate(12 27 32.4)'/%3E%3Crect x='27.4' y='13' width='1.8' height='10.6' rx='.7'/%3E%3C/g%3E%3C/svg%3E");
+    --w: 300px;
+    --salsa: #e02641;
+  }
+
+  .borde--mostaza {
+    --banda: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 280 24'%3E%3Cpath d='M0 6C25.2 6 30.8 4 56 4C81.2 4 86.8 9 112 9C137.2 9 142.8 5 168 5C193.2 5 198.8 8 224 8C249.2 8 254.8 6 280 6V24H0z'/%3E%3C/svg%3E");
+    --banda-brillo: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 280 24'%3E%3Cpath d='M10.1 11q12.3 -3 28 0M66.1 9q12.3 -3 28 0M122.1 14q12.3 -3 28 0M178.1 10q12.3 -3 28 0M234.1 13q12.3 -3 28 0' fill='none' stroke='%23fff' stroke-opacity='.42' stroke-width='2.2' stroke-linecap='round'/%3E%3C/svg%3E");
+    --gotas: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 280 42'%3E%3Cpath d='M0 0H280V6H249C242 6 240 7 240 11C236.4 16.3 236.4 20.9 236.4 24.2A7.6 7.6 0 1 1 227.6 24.2C227.6 20.9 227.6 16.3 224 11C224 7 222 6 215 6H192C185 6 183 7 183 11C179.8 10.6 179.8 10.3 179.8 10A6.6 6.6 0 1 1 172.2 10C172.2 10.3 172.2 10.6 169 11C169 7 167 6 160 6H131C124 6 122 7 122 11C117.4 17.5 117.4 23.1 117.4 27.2A8.4 8.4 0 1 1 106.6 27.2C106.6 23.1 106.6 17.5 102 11C102 7 100 6 93 6H62C55 6 53 7 53 11C48.8 14.4 48.8 17.5 48.8 19.6A8 8 0 1 1 39.2 19.6C39.2 17.5 39.2 14.4 35 11C35 7 33 6 26 6H0z'/%3E%3C/svg%3E");
+    --gotas-brillo: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 280 42'%3E%3Cg fill='%23fff' fill-opacity='.5'%3E%3Cellipse cx='229' cy='29.6' rx='1.5' ry='2.9' transform='rotate(12 229 30.4)'/%3E%3Crect x='229.4' y='13' width='1.8' height='9.2' rx='.7'/%3E%3Cellipse cx='173.4' cy='14.7' rx='1.3' ry='2.5' transform='rotate(12 173.4 15.4)'/%3E%3Cellipse cx='108.6' cy='32.8' rx='1.7' ry='3.2' transform='rotate(12 108.6 33.6)'/%3E%3Crect x='108.8' y='13' width='2.2' height='11.3' rx='.7'/%3E%3Cellipse cx='40.8' cy='25.2' rx='1.6' ry='3' transform='rotate(12 40.8 26)'/%3E%3Crect x='41.1' y='13' width='1.9' height='6' rx='.7'/%3E%3C/g%3E%3C/svg%3E");
+    --w: 280px;
+    --salsa: var(--d587-amarillo);
+  }
+
+  @keyframes gotas-crecen {
+    from {
+      transform: scaleY(0.15);
+      opacity: 0.6;
+    }
+    to {
+      transform: scaleY(1);
+      opacity: 1;
+    }
+  }
+
+  /* Sin soporte de animation-timeline, o con movimiento reducido, las gotas se ven completas */
+  @supports (animation-timeline: view()) {
+    @media (prefers-reduced-motion: no-preference) {
+      .borde__gotas {
+        animation: gotas-crecen 1s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+        animation-timeline: view();
+        animation-range: entry 0% cover 35%;
+      }
+    }
+  }
+
+  /* Lechuga: hoja rizada con dos tonos de verde y nervaduras sutiles; el crema de abajo es el de Reseñas */
+  .borde--lechuga {
+    --forma: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 -1 180 45'%3E%3Cpath d='M0 44V30C0 22 3 14 9 15C10 8 19 5 24 12C27 4 38 2 42 10C49 7 55 13 57 20C60 26 60 30 60 30C60 26 63 18 69 19C70 12 79 9 84 16C87 8 98 6 102 17C109 11 115 17 117 24C120 30 120 34 120 30C120 20 123 12 129 13C130 6 139 3 144 10C147 2 158 0 162 6C169 5 175 11 177 18C180 24 180 28 180 30V44z'/%3E%3C/svg%3E");
+    --brillo: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 -1 180 45'%3E%3Cpath d='M30 30C29 22 29 14 30 11M30 30C24 24 18 18 13 16M30 30C36 25 44 20 49 15M22 25C16 24 10 24 5 20M39 26C45 26 51 25 56 22M90 30C89 22 89 14 90 15M90 30C84 24 78 18 73 20M90 30C96 25 104 20 109 19M82 25C76 24 70 24 65 20M99 26C105 26 111 25 116 22M150 30C149 22 149 14 150 9M150 30C144 24 138 18 133 14M150 30C156 25 164 20 169 13M142 25C136 24 130 24 125 20M159 26C165 26 171 25 176 22' fill='none' stroke='%232f6b17' stroke-opacity='.5' stroke-width='1.2' stroke-linecap='round'/%3E%3Cpath d='M30 30C29 22 29 14 30 11M30 30C24 24 18 18 13 16M30 30C36 25 44 20 49 15M22 25C16 24 10 24 5 20M39 26C45 26 51 25 56 22M90 30C89 22 89 14 90 15M90 30C84 24 78 18 73 20M90 30C96 25 104 20 109 19M82 25C76 24 70 24 65 20M99 26C105 26 111 25 116 22M150 30C149 22 149 14 150 9M150 30C144 24 138 18 133 14M150 30C156 25 164 20 169 13M142 25C136 24 130 24 125 20M159 26C165 26 171 25 176 22' fill='none' stroke='%23d2f59a' stroke-opacity='.45' stroke-width='.7' stroke-linecap='round' transform='translate(1.5 0)'/%3E%3C/svg%3E");
+    --w: 180px;
+    --h: 45px;
+    background:
+      var(--brillo) bottom left / var(--w) var(--h) repeat-x,
+      linear-gradient(#8fd14f, #6bb338 16px, #4f9a2a 31px, var(--crema) 31px);
   }
 
   /* Pan con sésamo: cúpulas con semillas vaciadas, se ve el amarillo de abajo */
@@ -73,21 +162,16 @@ const { forma } = Astro.props;
     --h: 41px;
   }
 
-  /* Queso cheddar: cuelga del borde superior del bloque de abajo y gotea sobre él (no sube sobre el de arriba).
-     Empieza 3px por encima del bloque: el borde superior es plano, sin filas de costura. */
-  .borde--queso {
+  /* Dentado que cuelga del borde superior de Burgers, con el amarillo de la marquesina. Empieza 3px por encima del
+     bloque: el borde superior es plano, sin filas de costura. */
+  .borde--dentado-abajo {
     top: -3px;
     bottom: auto;
-    height: 48px;
-    background: #ffb81c;
-    -webkit-mask: var(--forma) top left / 120px 48px repeat-x;
-    mask: var(--forma) top left / 120px 48px repeat-x;
-    --forma: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 48'%3E%3Cpath d='M0 0H120V14C104 20 92 12 76 14S34 20 0 14z'/%3E%3Crect x='10' y='6' width='14' height='34' rx='7'/%3E%3Crect x='46' y='6' width='12' height='24' rx='6'/%3E%3Crect x='84' y='6' width='15' height='40' rx='7.5'/%3E%3Crect x='106' y='6' width='9' height='20' rx='4.5'/%3E%3C/svg%3E");
+    height: 14px;
+    background: var(--d587-amarillo);
+    -webkit-mask: var(--forma) top left / 16px 14px repeat-x;
+    mask: var(--forma) top left / 16px 14px repeat-x;
+    --forma: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 14'%3E%3Cpath d='M0 0H16V5L8 13 0 5z'/%3E%3C/svg%3E");
   }
 
-  /* Salsa en zigzag: la línea toca el borde del pie con cada vértice, sin relleno */
-  .borde--salsa {
-    height: 18px;
-    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 18'%3E%3Cpath d='M-10 3 0 14 10 3 20 14 30 3 40 14 50 3' fill='none' stroke='%23ee2845' stroke-width='4.5' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E") bottom left / 40px 18px repeat-x;
-  }
 </style>

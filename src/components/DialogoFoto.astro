@@ -1,14 +1,39 @@
 ---
-// Un único <dialog> reutilizable para ampliar fotos. Se abre desde cualquier a.miniatura.
+// Un único <dialog> reutilizable. Se abre desde cualquier a.miniatura (solo la foto, en /carta) o a.detalle-burger
+// (la ficha completa, en la portada). Con `detalle` suma descripción, botones de pedir y el enlace a la carta;
+// esas partes solo se muestran cuando el origen trae data-descripcion.
+import EnlacesPedido from './EnlacesPedido.astro';
+import { url } from '../lib/formato';
+
+interface Props {
+  detalle?: boolean;
+}
+
+const { detalle = false } = Astro.props;
 ---
 
 <dialog id="dialogo-foto" class="dialogo-foto" aria-label="Foto del producto">
   <button type="button" class="dialogo-foto__cerrar" aria-label="Cerrar">&times;</button>
   <img alt="" width="1000" height="1000" decoding="async" sizes="(min-width: 48rem) 40rem, 92vw" />
-  <p class="dialogo-foto__pie">
-    <span class="dialogo-foto__nombre"></span>
-    <span class="dialogo-foto__precio"></span>
-  </p>
+  <div class="dialogo-foto__info">
+    <p class="dialogo-foto__pie">
+      <span class="dialogo-foto__nombre"></span>
+      <span class="dialogo-foto__precio"></span>
+    </p>
+    {
+      detalle && (
+        <>
+          <p class="dialogo-foto__desc" hidden />
+          <div class="dialogo-foto__pedir" hidden>
+            <EnlacesPedido modo="corto" rotulo="Pídela por delivery" incluir={['ubereats', 'pedidosya']} />
+          </div>
+          <a class="dialogo-foto__carta" href={url('carta') + '#hamburguesas'} hidden>
+            Ver la carta completa
+          </a>
+        </>
+      )
+    }
+  </div>
 </dialog>
 
 <script>
@@ -16,9 +41,14 @@
   const img = dialogo.querySelector('img')!;
   const nombre = dialogo.querySelector('.dialogo-foto__nombre')!;
   const precio = dialogo.querySelector('.dialogo-foto__precio')!;
+  // Partes de la ficha: solo existen con `detalle`
+  const desc = dialogo.querySelector<HTMLElement>('.dialogo-foto__desc');
+  const extras = dialogo.querySelectorAll<HTMLElement>('.dialogo-foto__desc, .dialogo-foto__pedir, .dialogo-foto__carta');
   let origen: HTMLElement | null = null;
+  const SIZES_FOTO = img.sizes;
+  const SIZES_FICHA = '(min-width: 48rem) min(46vw, 28rem), 92vw';
 
-  document.querySelectorAll<HTMLAnchorElement>('a.miniatura').forEach((a) => {
+  document.querySelectorAll<HTMLAnchorElement>('a.miniatura, a.detalle-burger').forEach((a) => {
     a.setAttribute('role', 'button');
     a.addEventListener('click', (e) => {
       e.preventDefault();
@@ -26,11 +56,21 @@
       const d = a.dataset;
       img.width = Number(d.ancho);
       img.height = Number(d.alto);
+      // Se vacía antes de asignar: así no se ve la foto anterior mientras carga la nueva
+      img.removeAttribute('srcset');
+      img.removeAttribute('src');
+      const ficha = d.descripcion !== undefined;
+      // En la ficha de escritorio la foto ocupa media ventana (28rem), no los 40rem de la foto sola
+      img.sizes = ficha ? SIZES_FICHA : SIZES_FOTO;
       img.srcset = d.srcset ?? '';
       img.src = d.src ?? '';
       img.alt = `Foto de ${d.nombre}`;
       nombre.textContent = d.nombre ?? '';
       precio.textContent = d.precio ?? '';
+      if (desc) desc.textContent = d.descripcion ?? '';
+      extras.forEach((el) => (el.hidden = !ficha));
+      dialogo.classList.toggle('dialogo-foto--ficha', ficha);
+      dialogo.setAttribute('aria-label', `${ficha ? 'Detalle de' : 'Foto de'} ${d.nombre}`);
       dialogo.showModal();
     });
     // role=button: Enter abre en keydown (lo hace el enlace); Espacio abre al soltar, como un
@@ -45,8 +85,10 @@
 
   dialogo.querySelector('.dialogo-foto__cerrar')!.addEventListener('click', () => dialogo.close());
   // Clic sobre el propio <dialog> (el fondo): el contenido ocupa todo el cuadro, así que
-  // se compara con sus límites.
+  // se compara con sus límites. Solo si el destino es el diálogo: el clic sintético de Enter sobre un
+  // enlace interno llega con coordenadas 0,0 pero con el enlace como destino.
   dialogo.addEventListener('click', (e) => {
+    if (e.target !== dialogo) return;
     const r = dialogo.getBoundingClientRect();
     const dentro =
       e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom;
@@ -81,6 +123,12 @@
     background: #000;
   }
 
+  /* Dentro de .bloque--burgers el foco sería negro; el diálogo es oscuro */
+  .dialogo-foto :focus-visible {
+    outline: 3px solid var(--d587-amarillo);
+    outline-offset: 2px;
+  }
+
   .dialogo-foto__pie {
     display: flex;
     justify-content: space-between;
@@ -102,10 +150,13 @@
     color: var(--d587-amarillo);
   }
 
+  /* Pegado arriba mientras el diálogo se desplaza (celular); el margen negativo lo deja sobre la foto */
   .dialogo-foto__cerrar {
-    position: absolute;
+    position: sticky;
     top: 0.5rem;
-    right: 0.5rem;
+    z-index: 1;
+    display: block;
+    margin: 0.5rem 0.5rem -3.25rem auto;
     width: 2.75rem;
     height: 2.75rem;
     border: 0;
@@ -120,6 +171,79 @@
   .dialogo-foto__cerrar:focus-visible {
     outline: 3px solid var(--d587-amarillo);
     outline-offset: 2px;
+  }
+
+  .dialogo-foto__desc {
+    padding: 0 1rem;
+    color: var(--texto-suave);
+    line-height: 1.5;
+  }
+
+  .dialogo-foto__pedir {
+    padding: 1rem 1rem 0;
+  }
+
+  .dialogo-foto__carta {
+    display: inline-block;
+    margin: 1rem 1rem 1.1rem;
+    padding: 0.5rem 0;
+    min-height: 2.75rem;
+    color: #fff;
+    text-decoration: underline;
+    text-underline-offset: 0.25em;
+  }
+
+  .dialogo-foto--ficha .dialogo-foto__nombre {
+    font-family: var(--display);
+    font-weight: 400;
+    font-size: 2.1rem;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+  }
+
+  .dialogo-foto__desc[hidden],
+  .dialogo-foto__pedir[hidden],
+  .dialogo-foto__carta[hidden] {
+    display: none;
+  }
+
+  /* En celular la ficha es una columna: la foto no pasa de la mitad de la pantalla para que se vea el pedido */
+  .dialogo-foto--ficha img {
+    max-height: 48dvh;
+  }
+
+  /* Ficha de la portada: foto a la izquierda y datos a la derecha en pantallas anchas */
+  @media (min-width: 48rem) {
+    .dialogo-foto--ficha {
+      width: min(92vw, 56rem);
+      overflow: hidden;
+    }
+
+    /* En la ficha ancha no se desplaza el cuadro (sí la columna de datos): el botón va fijo en la esquina */
+    .dialogo-foto--ficha .dialogo-foto__cerrar {
+      position: absolute;
+      top: 0.5rem;
+      right: 0.5rem;
+      margin: 0;
+    }
+
+    .dialogo-foto--ficha[open] {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    }
+
+    .dialogo-foto--ficha img {
+      height: 100%;
+      max-height: 92dvh;
+      object-fit: cover;
+    }
+
+    .dialogo-foto--ficha .dialogo-foto__info {
+      align-self: center;
+      overflow: auto;
+      max-height: 92dvh;
+      padding: 2.5rem 0 0.5rem;
+    }
   }
 
   @media (prefers-reduced-motion: no-preference) {

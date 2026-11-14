@@ -1,8 +1,10 @@
 ---
 // Enlaces de delivery y redes con logo. Los SVG de simple-icons (CC0) van inline, sin título:
 // el nombre accesible lo da el texto del enlace.
-// PedidosYa no tiene ícono libre: va como botón de texto con su rojo de marca.
+// Todos los logos van en monocromo (currentColor): el logo identifica la app y el color lo pone la marca Distrito.
+// PedidosYa usa su isotipo oficial (la "P", ver LICENCIA.md).
 import uberEats from '../assets/iconos/ubereats.svg?raw';
+import pedidosYa from '../assets/iconos/pedidosya-isotipo.svg?raw';
 import instagram from '../assets/iconos/instagram.svg?raw';
 import { datos, urlInstagram } from '../lib/local';
 
@@ -11,10 +13,14 @@ interface Props {
   incluir?: ('ubereats' | 'pedidosya' | 'instagram')[];
   /** `texto`: logo y "Pedir en ..."; `corto`: logo y nombre; `icono`: solo logo (con aria-label). */
   modo?: 'texto' | 'corto' | 'icono';
+  /** Rótulo pequeño sobre los botones de delivery. */
+  rotulo?: string;
+  /** id del rótulo, para que un contenedor lo use en aria-labelledby. */
+  idRotulo?: string;
   class?: string;
 }
 
-const { incluir = ['ubereats', 'pedidosya'], modo = 'texto', class: clase } = Astro.props;
+const { incluir = ['ubereats', 'pedidosya'], modo = 'texto', rotulo, idRotulo, class: clase } = Astro.props;
 
 const limpio = (svg: string) =>
   svg
@@ -25,93 +31,145 @@ const limpio = (svg: string) =>
 const delivery = (id: string) => datos.delivery.find((d) => d.id === id);
 const catalogo = {
   ubereats: { nombre: 'Uber Eats', url: delivery('ubereats')?.url, icono: limpio(uberEats), accion: 'Pedir en Uber Eats' },
-  pedidosya: { nombre: 'PedidosYa', url: delivery('pedidosya')?.url, icono: '', accion: 'Pedir en PedidosYa' },
+  pedidosya: { nombre: 'PedidosYa', url: delivery('pedidosya')?.url, icono: limpio(pedidosYa), accion: 'Pedir en PedidosYa' },
   instagram: { nombre: 'Instagram', url: urlInstagram, icono: limpio(instagram), accion: 'Instagram' },
 };
 const items = incluir.map((id) => ({ id, ...catalogo[id] })).filter((i) => i.url);
+const apps = items.filter((i) => i.id !== 'instagram');
+const ig = items.find((i) => i.id === 'instagram');
 ---
 
 {
   items.length > 0 && (
-    <ul class:list={['enlaces', `enlaces--${modo}`, clase]}>
-      {items.map((i) => (
-        <li>
-          <a
-            class:list={['boton', 'enlace', `enlace--${i.id}`]}
-            href={i.url}
-            target="_blank"
-            rel="noopener"
-            aria-label={modo === 'icono' ? `${i.nombre} (se abre en una pestaña nueva)` : undefined}
-          >
-            {i.icono && <Fragment set:html={i.icono} />}
-            {modo === 'icono' ? (
-              i.id === 'pedidosya' && <span aria-hidden="true">{i.nombre}</span>
-            ) : (
-              <>
-                <span>{modo === 'texto' ? i.accion : i.nombre}</span>
-                <span class="visualmente-oculto"> (se abre en una pestaña nueva)</span>
-              </>
-            )}
-          </a>
-        </li>
-      ))}
-    </ul>
+    <div class:list={['pedido', `pedido--${modo}`, clase]}>
+      {rotulo && apps.length > 0 && (
+        <p class="pedido__rotulo" id={idRotulo}>
+          {rotulo}
+        </p>
+      )}
+      {apps.length > 0 && (
+        <ul class="enlaces">
+          {apps.map((i) => (
+            <li>
+              <a
+                class:list={['boton', 'boton--borde', 'enlace', `enlace--${i.id}`]}
+                href={i.url}
+                target="_blank"
+                rel="noopener"
+                aria-label={modo === 'icono' ? `${i.nombre} (se abre en una pestaña nueva)` : undefined}
+              >
+                <Fragment set:html={i.icono} />
+                {modo !== 'icono' && (
+                  <>
+                    <span>{modo === 'texto' ? i.accion : i.nombre}</span>
+                    <span class="visualmente-oculto"> (se abre en una pestaña nueva)</span>
+                  </>
+                )}
+              </a>
+            </li>
+          ))}
+        </ul>
+      )}
+      {ig && (
+        <a class="enlace-ig" href={ig.url} target="_blank" rel="noopener">
+          <Fragment set:html={ig.icono} />
+          <span class="visualmente-oculto">Instagram </span>
+          <span>@{datos.instagram}</span>
+          <span class="visualmente-oculto"> (se abre en una pestaña nueva)</span>
+        </a>
+      )}
+    </div>
   )
 }
 
 <style>
-  .enlaces {
+  .pedido {
     display: flex;
-    flex-wrap: wrap;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  .pedido__rotulo {
+    margin: 0;
+    font-family: var(--cuerpo);
+    font-size: 0.85rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--texto-suave);
+  }
+
+  .enlaces {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 10.5rem), 1fr));
     gap: 0.75rem;
+    width: 100%;
     margin: 0;
     padding: 0;
     list-style: none;
   }
 
+  /* Mismo estilo para todas las apps: pastilla con borde blanco sobre fondo oscuro y logo en currentColor.
+     El fondo semitransparente asegura el contraste también sobre el póster del hero. */
   .enlace {
+    width: 100%;
     min-height: 2.75rem;
-    min-width: 2.75rem;
-  }
-
-  .enlace :global(svg) {
-    flex: none;
-    width: 1.6rem;
-    height: 1.6rem;
-  }
-
-  /* Uber Eats: verde de marca con el logo en negro (8,8:1) */
-  .enlace--ubereats {
-    background: #06c167;
-    border-color: #06c167;
-    color: #000;
-  }
-
-  /* PedidosYa: rojo de marca con texto negro (5,2:1; el blanco daría 4,05:1) */
-  .enlace--pedidosya {
-    background: #fa0050;
-    border-color: #fa0050;
-    color: #000;
-  }
-
-  /* Instagram: monocromo, igual que los botones con borde */
-  .enlace--instagram {
+    padding: 0.5rem 0.9rem;
+    border-color: #fff;
+    background: rgb(0 0 0 / 0.55);
     color: #fff;
+    font-size: 1.2rem;
+    white-space: nowrap;
+  }
+
+  .enlace :global(svg),
+  .enlace-ig :global(svg) {
+    flex: none;
+    width: 1.4rem;
+    height: 1.4rem;
+  }
+
+  /* Instagram: enlace secundario, discreto, con logo y @usuario */
+  .enlace-ig {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-height: 2.75rem;
+    padding-block: 0.25rem;
+    color: var(--texto-suave);
+    font-size: 1rem;
+    font-weight: 600;
+    text-decoration: none;
+    background: linear-gradient(var(--d587-amarillo), var(--d587-amarillo)) left bottom 0.45rem / 0% 2px no-repeat;
   }
 
   @media (hover: hover) and (pointer: fine) {
-    .enlace--instagram:hover {
-      background: rgb(255 255 255 / 0.08);
+    .enlace-ig:hover {
+      color: #fff;
     }
   }
 
-  .enlaces--icono .enlace {
-    padding: 0.5rem 0.9rem;
-    font-size: 1.1rem;
+  @media (prefers-reduced-motion: no-preference) and (hover: hover) and (pointer: fine) {
+    .enlace-ig {
+      transition: color 0.2s ease, background-size 0.3s ease-in-out;
+    }
+
+    .enlace-ig:hover {
+      background-size: 100% 2px;
+    }
   }
 
-  .enlaces--corto .enlace {
-    padding: 0.5rem 1.1rem;
-    font-size: 1.15rem;
+  /* Pie: logos solos, pastillas de 44 px */
+  .pedido--icono .enlaces {
+    display: flex;
+    flex-wrap: wrap;
+    width: auto;
+  }
+
+  .pedido--icono .enlace {
+    width: auto;
+    min-width: 2.75rem;
+    padding: 0.5rem 0.9rem;
   }
 </style>

@@ -13,7 +13,8 @@ interface Props {
   descripcion: string;
   /** Ruta interna para el canonical, por ejemplo "carta". */
   ruta?: string;
-  jsonLd?: Record<string, unknown>;
+  /** Uno o varios bloques JSON-LD; cada uno va en su propio <script>. */
+  jsonLd?: Record<string, unknown> | Record<string, unknown>[];
   noIndexar?: boolean;
   /** Atajos de la barra inferior (solo celular). Sin ellos no se monta la barra. */
   atajos?: ComponentProps<typeof BarraAtajos>['atajos'];
@@ -21,6 +22,7 @@ interface Props {
 
 const { titulo, descripcion, ruta = '', jsonLd, noIndexar = false, atajos } = Astro.props;
 const canonical = urlAbsoluta(ruta);
+const bloquesLd = jsonLd ? (Array.isArray(jsonLd) ? jsonLd : [jsonLd]) : [];
 // La portada (ruta vacía) tiene hero y secciones; /carta usa la barra como cabecera; el resto, barra simple.
 const variante = ruta === '' ? 'portada' : ruta === 'carta' ? 'carta' : 'simple';
 const tocomples = atajos?.some((a) => a.href === '#t-tocomples') ?? false;
@@ -63,7 +65,7 @@ const imagenOg = urlAbsoluta('og-distrito587.png');
     <meta name="twitter:description" content={descripcion} />
     <meta name="twitter:image" content={imagenOg} />
 
-    {jsonLd && <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />}
+    {bloquesLd.map((ld) => <script type="application/ld+json" set:html={JSON.stringify(ld)} />)}
   </head>
   <body>
     <a class="saltar" href="#contenido">Saltar al contenido</a>

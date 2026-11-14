@@ -23,13 +23,21 @@ export const datos = local as typeof local & {
 
 export const direccionCorta = `${datos.direccion.calle}, ${datos.direccion.comuna}`;
 
+/** Dirección oficial de la ficha de Google ("Ramón Freire 587"). Solo para datos estructurados y llms.txt. */
+export const direccionOficial = `${datos.direccion.calleOficial}, ${datos.direccion.comuna}`;
+
 export const urlInstagram = `https://www.instagram.com/${datos.instagram}/`;
 
+// Con coordenadas el iframe cae en el punto exacto de la ficha; sin ellas se usa la dirección de texto
+const consultaMapa = datos.geo ? `${datos.geo.lat},${datos.geo.lng}` : datos.mapa.consulta;
+
+// Nombre y dirección: Google abre la ficha del local (la misma URL que el enlace de Google en resenas.json)
 export const urlComoLlegar =
-  'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(datos.mapa.consulta);
+  'https://www.google.com/maps/search/?api=1&query=' +
+  encodeURIComponent(`${datos.nombre.replace(/\s+/g, '')} ${datos.direccion.calleOficial} ${datos.direccion.comuna}`);
 
 export const urlMapaEmbebido =
-  'https://www.google.com/maps?output=embed&q=' + encodeURIComponent(datos.mapa.consulta);
+  'https://www.google.com/maps?output=embed&z=17&q=' + encodeURIComponent(consultaMapa);
 
 export const urlWhatsapp = datos.whatsapp
   ? `https://wa.me/${datos.whatsapp.replace(/\D/g, '')}?text=${encodeURIComponent('Hola Distrito 587, quiero hacer un pedido')}`
@@ -49,15 +57,16 @@ export function jsonLdRestaurant() {
     logo: urlAbsoluta('icon-512.png'),
     address: {
       '@type': 'PostalAddress',
-      streetAddress: datos.direccion.calle,
+      streetAddress: datos.direccion.calleOficial,
+      postalCode: datos.direccion.codigoPostal,
       addressLocality: datos.direccion.comuna,
       addressRegion: datos.direccion.region,
       addressCountry: datos.direccion.codigoPais,
     },
     servesCuisine: datos.cocina,
     priceRange: datos.rangoPrecios,
-    sameAs: [urlInstagram],
-    hasMenu: urlAbsoluta('carta'),
+    sameAs: [urlInstagram, ...datos.delivery.filter((d) => d.url).map((d) => d.url)],
+    hasMenu: { '@type': 'Menu', '@id': urlAbsoluta('carta#menu'), url: urlAbsoluta('carta') },
     acceptsReservations: false,
   };
   if (datos.geo) {
@@ -72,7 +81,7 @@ export function jsonLdRestaurant() {
     }));
   }
   // Delivery: sin OrderAction a propósito. Google solo lo usa con el programa de pedidos de socios
-  // y su validación no se puede comprobar aquí; sameAs ya enlaza el perfil, y las apps van en el HTML
+  // y su validación no se puede comprobar aquí; sameAs ya enlaza los perfiles de las apps
   if (datos.telefono) ld.telephone = datos.telefono;
   return ld;
 }

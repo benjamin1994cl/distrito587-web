@@ -1,0 +1,267 @@
+---
+// Preguntas frecuentes con <details>/<summary> y su FAQPage en JSON-LD.
+// Cada respuesta se arma por partes (texto y enlaces): el HTML visible y el texto plano del JSON-LD
+// salen de las mismas partes, así que no pueden diferir. Dirección, horario y delivery vienen de local.json.
+import Borde from './Borde.astro';
+import carta from '../data/carta.json';
+import { url } from '../lib/formato';
+import { datos, direccionCorta, urlComoLlegar } from '../lib/local';
+
+type Parte = string | { texto: string; href: string; externo?: boolean };
+interface Pregunta {
+  pregunta: string;
+  partes: Parte[];
+}
+
+const horario = [
+  ...datos.horario.map((h) => `${h.etiqueta} de ${h.abre} a ${h.cierra}`),
+  ...datos.cerrado.map((c) => `${c.etiqueta} cerrado`),
+];
+const delivery = datos.delivery.filter((d) => d.url);
+
+// Las demás categorías de la carta (todas menos hamburguesas), en minúscula y unidas: "a, b y c"
+const otras = carta.categorias
+  .filter((c) => c.nombre.toLowerCase() !== 'hamburguesas')
+  .map((c) => c.nombre.toLowerCase());
+const otrasTexto =
+  otras.length > 1 ? `${otras.slice(0, -1).join(', ')} y ${otras[otras.length - 1]}` : otras.join('');
+
+const preguntas: Pregunta[] = [
+  {
+    pregunta: '¿Dónde están?',
+    partes: [
+      `Estamos en ${direccionCorta}. `,
+      { texto: 'Cómo llegar', href: urlComoLlegar, externo: true },
+      ' en Google Maps.',
+    ],
+  },
+  ...(datos.horario.length > 0
+    ? [{ pregunta: '¿Qué horario tienen?', partes: [`${horario.join('. ')}.`] }]
+    : []),
+  {
+    pregunta: '¿Las papas vienen incluidas?',
+    partes: ['Sí, todas las burgers llevan papas caseras de regalo.'],
+  },
+  ...(delivery.length > 0
+    ? [
+        {
+          pregunta: '¿Tienen delivery?',
+          partes: [
+            'Sí, por ',
+            ...delivery.flatMap((d, i): Parte[] => [
+              i === 0 ? '' : i === delivery.length - 1 ? ' y ' : ', ',
+              { texto: d.nombre, href: d.url, externo: true },
+            ]),
+            '.',
+          ],
+        },
+      ]
+    : []),
+  {
+    pregunta: '¿Qué es una smash burger?',
+    partes: [
+      'Es una hamburguesa cuya carne se aplasta contra la plancha muy caliente. Así se forma una costra dorada por fuera y queda jugosa por dentro.',
+    ],
+  },
+  {
+    pregunta: '¿Tienen opciones además de hamburguesas?',
+    partes: [
+      `Sí: ${otrasTexto}. Mira todo en `,
+      { texto: 'la carta', href: url('carta') },
+      '.',
+    ],
+  },
+];
+
+const textoPlano = (p: Pregunta) =>
+  p.partes.map((x) => (typeof x === 'string' ? x : x.texto)).join('');
+
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: preguntas.map((p) => ({
+    '@type': 'Question',
+    name: p.pregunta,
+    acceptedAnswer: { '@type': 'Answer', text: textoPlano(p) },
+  })),
+};
+---
+
+<section class="bloque bloque--preguntas" aria-labelledby="t-preguntas">
+  <Borde forma="mostaza" />
+  <div class="contenedor">
+    <div class="seccion__titulo">
+      <h2 id="t-preguntas"><span class="pal" style="--i:0"><span>Preguntas</span></span>{' '}<span class="pal" style="--i:1"><span>frecuentes</span></span></h2>
+    </div>
+    <div class="faq">
+      {
+        preguntas.map((p, i) => (
+          <details class="faq__item" style={`--i:${i}`}>
+            <summary>
+              <span>{p.pregunta}</span>
+              <span class="faq__icono" aria-hidden="true" />
+            </summary>
+            <p>
+              {p.partes.map((x) =>
+                typeof x === 'string' ? (
+                  x
+                ) : x.externo ? (
+                  <a href={x.href} target="_blank" rel="noopener">{x.texto}<span class="visualmente-oculto"> (se abre en una pestaña nueva)</span></a>
+                ) : (
+                  <a href={x.href}>{x.texto}</a>
+                ),
+              )}
+            </p>
+          </details>
+        ))
+      }
+    </div>
+  </div>
+  <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
+</section>
+
+<style>
+  /* Rojo: texto negro (6,9:1). Tarjetas crema con borde negro, como las listas de Extras */
+  .bloque--preguntas {
+    --borde-color: var(--d587-rojo);
+    --titulo: #000;
+    --suave: #000;
+    --trazo: rgb(0 0 0 / 0.35);
+    --subrayado: #000;
+    background: var(--d587-rojo);
+    color: #000;
+  }
+
+  .bloque--preguntas :global(:focus-visible) {
+    outline-color: #000;
+  }
+
+  .faq {
+    display: grid;
+    gap: 0.9rem;
+    max-width: 48rem;
+  }
+
+  .faq__item {
+    background: var(--crema);
+    border: 2px solid #000;
+    border-radius: var(--radio);
+    box-shadow: 4px 4px 0 #000;
+  }
+
+  .faq__item summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    min-height: 3.25rem;
+    padding: 0.6rem 1.1rem;
+    font-weight: 700;
+    font-size: 1.15rem;
+    line-height: 1.25;
+    cursor: pointer;
+    list-style: none;
+    border-radius: calc(var(--radio) - 2px);
+  }
+
+  .faq__item summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .faq__item summary:focus-visible {
+    outline: 3px solid #000;
+    outline-offset: 3px;
+  }
+
+  /* Más y menos: dos barras; la vertical gira y desaparece al abrir */
+  .faq__icono {
+    position: relative;
+    flex: none;
+    width: 1.25rem;
+    height: 1.25rem;
+  }
+
+  .faq__icono::before,
+  .faq__icono::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: calc(50% - 1.5px);
+    height: 3px;
+    border-radius: 2px;
+    background: #000;
+  }
+
+  .faq__icono::after {
+    rotate: 90deg;
+  }
+
+  .faq__item[open] .faq__icono::after {
+    rotate: 0deg;
+    opacity: 0;
+  }
+
+  .faq__item p {
+    margin: 0;
+    padding: 0 1.1rem 1.1rem;
+    max-width: 40rem;
+    font-size: 1.05rem;
+    line-height: 1.5;
+  }
+
+  .faq__item p a {
+    color: #000;
+    font-weight: 600;
+    text-underline-offset: 0.2em;
+  }
+
+  /* Cascada: cada ítem se despliega de arriba hacia abajo con clip-path, escalonado. El recorte deja
+     margen de 10 px para la sombra dura y el anillo de foco. Estado inicial oculto solo con soporte y sin reduce. */
+  @media (prefers-reduced-motion: no-preference) {
+    @supports (animation-timeline: view()) {
+      .faq {
+        view-timeline: --faq block;
+      }
+
+      .faq__item {
+        animation: faq-desplegar linear both;
+        animation-timeline: --faq;
+        animation-range: entry calc(var(--i, 0) * 7%) entry calc(30% + var(--i, 0) * 7%);
+      }
+    }
+  }
+
+  @keyframes faq-desplegar {
+    from {
+      clip-path: inset(-10px -10px 100% -10px);
+    }
+    to {
+      clip-path: inset(-10px -10px -10px -10px);
+    }
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .faq__icono::after {
+      transition: rotate 0.25s, opacity 0.25s;
+    }
+
+    @supports (interpolate-size: allow-keywords) and selector(::details-content) {
+      .faq__item {
+        interpolate-size: allow-keywords;
+      }
+
+      .faq__item::details-content {
+        block-size: 0;
+        overflow: clip;
+        transition:
+          block-size 0.3s ease,
+          content-visibility 0.3s allow-discrete;
+      }
+
+      .faq__item[open]::details-content {
+        block-size: auto;
+      }
+    }
+  }
+</style>

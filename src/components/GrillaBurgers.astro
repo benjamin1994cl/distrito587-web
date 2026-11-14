@@ -1,0 +1,638 @@
+---
+// Las burgers de la portada. Escritorio (48rem o más): grilla con todas a la vista, sin interactuar.
+// Celular: fila con imán (scroll-snap) y tarjetas al 80% del ancho; la siguiente asoma. Las flechas, el
+// progreso y la pista de "desliza" aparecen con JS; sin JS se desliza igual.
+// Cada tarjeta se abre en el diálogo único de DialogoFoto: el enlace principal cubre la tarjeta (enlace
+// estirado) y lleva a /carta#hamburguesas si JS no lo intercepta; la foto grande solo se pide al abrir.
+import { getImage } from 'astro:assets';
+import FotoProducto from './FotoProducto.astro';
+import DialogoFoto from './DialogoFoto.astro';
+import ilustracion from '../assets/ilustraciones/burger.svg';
+import { precio, url } from '../lib/formato';
+import { buscarFoto } from '../lib/fotos-carta';
+
+interface Burger {
+  nombre: string;
+  descripcion: string;
+  precio: number;
+  imagen: string | null;
+}
+interface Props {
+  burgers: Burger[];
+  /** id del h2 que nombra la lista */
+  titulo: string;
+}
+
+const { burgers, titulo } = Astro.props;
+const total = burgers.length;
+
+// Datos de la foto grande del diálogo (mismos tamaños que MiniaturaProducto). Sin foto, la ilustración.
+const items = await Promise.all(
+  burgers.map(async (b) => {
+    const origen = buscarFoto(b.imagen);
+    const [g600, g1000] = origen
+      ? await Promise.all([600, 1000].map((w) => getImage({ src: origen, width: w, format: 'webp' })))
+      : [];
+    const foto =
+      g600 && g1000
+        ? {
+            src: g1000.src,
+            srcset: `${g600.src} 600w, ${g1000.src} 1000w`,
+            ancho: g1000.options.width,
+            alto: g1000.options.height,
+          }
+        : { src: ilustracion.src, srcset: '', ancho: 640, alto: 800 };
+    return { ...b, foto };
+  }),
+);
+const hrefCarta = url('carta') + '#hamburguesas';
+---
+
+<div
+  class="burgers"
+  data-total={total}
+  style={`--medio-f4:${(Math.ceil(total / 4) - 1) / 2};--medio-f2:${(Math.ceil(total / 2) - 1) / 2}`}
+>
+  <ul class="burgers__lista" aria-labelledby={titulo}>
+    {
+      items.map((b, i) => (
+        <li class="burger" style={`--n:${i};--c4:${i % 4};--f4:${Math.floor(i / 4)};--c2:${i % 2};--f2:${Math.floor(i / 2)}`}>
+          <div class="burger__inclina">
+            <article class="burger__tarjeta">
+              <div class="burger__foto">
+                <FotoProducto imagen={b.imagen} ancho={640} alto={800} sizes="(min-width: 80rem) 300px, (min-width: 48rem) 45vw, 80vw">
+                  <img src={ilustracion.src} width="640" height="800" alt="" loading="lazy" decoding="async" />
+                </FotoProducto>
+              </div>
+              <div class="burger__cuerpo">
+                <span class="burger__numero" aria-hidden="true">
+                  {String(i + 1).padStart(2, '0')}
+                </span>
+                <h3>{b.nombre}</h3>
+                <p class="burger__desc">{b.descripcion}</p>
+                <div class="burger__pie">
+                  <p class="precio burger__precio">{precio(b.precio)}</p>
+                  <a
+                    class="detalle-burger"
+                    href={hrefCarta}
+                    data-src={b.foto.src}
+                    data-srcset={b.foto.srcset}
+                    data-ancho={b.foto.ancho}
+                    data-alto={b.foto.alto}
+                    data-nombre={b.nombre}
+                    data-descripcion={b.descripcion}
+                    data-precio={precio(b.precio)}
+                  >
+                    <span>Ver detalle</span>
+                    <span class="visualmente-oculto"> de {b.nombre}</span>
+                    <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false">
+                      <path d="M9.5 5.5 16 12l-6.5 6.5" />
+                    </svg>
+                  </a>
+                </div>
+              </div>
+            </article>
+          </div>
+        </li>
+      ))
+    }
+  </ul>
+  <button type="button" class="burgers__flecha burgers__flecha--ant" aria-label="Burger anterior" hidden>
+    <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" focusable="false"><path d="M14.5 5.5 8 12l6.5 6.5" /></svg>
+  </button>
+  <button type="button" class="burgers__flecha burgers__flecha--sig" aria-label="Burger siguiente" hidden>
+    <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" focusable="false"><path d="M9.5 5.5 16 12l-6.5 6.5" /></svg>
+  </button>
+  <div class="burgers__progreso" hidden>
+    <span class="burgers__barra" aria-hidden="true"><span class="burgers__relleno"></span></span>
+    <span class="burgers__conteo" aria-live="polite" aria-atomic="true">1 de {total}</span>
+  </div>
+</div>
+
+<DialogoFoto detalle />
+
+<script is:inline>
+  document.querySelectorAll('.burgers').forEach(function (c) {
+    var lista = c.querySelector('.burgers__lista');
+    var slides = Array.prototype.slice.call(lista.children);
+    var total = slides.length;
+    var ant = c.querySelector('.burgers__flecha--ant');
+    var sig = c.querySelector('.burgers__flecha--sig');
+    var progreso = c.querySelector('.burgers__progreso');
+    var conteo = c.querySelector('.burgers__conteo');
+    var relleno = c.querySelector('.burgers__relleno');
+    var quieto = window.matchMedia('(prefers-reduced-motion: reduce)');
+    var grilla = window.matchMedia('(min-width: 48rem)');
+    var paso = function () { return slides.length > 1 ? slides[1].offsetLeft - slides[0].offsetLeft : lista.clientWidth; };
+    var ultimo = -1;
+    // Posición actual: la burger que arranca en el borde izquierdo; al llegar al tope, la última
+    var actualizar = function () {
+      if (grilla.matches) return;
+      var tope = lista.scrollWidth - lista.clientWidth;
+      var fin = lista.scrollLeft >= tope - 2;
+      var i = fin ? total - 1 : Math.min(total - 1, Math.round(lista.scrollLeft / paso()));
+      // aria-disabled (no disabled): el foco no se pierde al llegar al extremo
+      ant.setAttribute('aria-disabled', String(lista.scrollLeft <= 2));
+      sig.setAttribute('aria-disabled', String(fin));
+      if (i === ultimo) return;
+      ultimo = i;
+      // Se anuncia solo al terminar el gesto: esta función corre tras el scroll, no durante
+      var texto = i + 1 + ' de ' + total;
+      if (conteo.textContent !== texto) conteo.textContent = texto;
+      relleno.style.width = ((i + 1) / total) * 100 + '%';
+    };
+    var espera = 0;
+    lista.addEventListener('scroll', function () {
+      clearTimeout(espera);
+      espera = setTimeout(actualizar, 120);
+    }, { passive: true });
+    [ant, sig].forEach(function (f) {
+      f.addEventListener('click', function () {
+        if (f.getAttribute('aria-disabled') === 'true') return;
+        lista.scrollBy({ left: (f === ant ? -1 : 1) * paso(), behavior: quieto.matches ? 'auto' : 'smooth' });
+      });
+    });
+
+    // Pista de "desliza": la fila asoma hacia la izquierda una sola vez y se apaga con el primer gesto
+    var CLAVE = 'd587-burgers-pista';
+    var visto = false;
+    try { visto = localStorage.getItem(CLAVE) === '1'; } catch (e) {}
+    // Solo la pista apaga: animationend también llega de otras animaciones (p. ej. la de entrada de cada burger)
+    var alTerminarPista = function (e) { if (e.animationName === 'asoma') apagar(); };
+    var apagar = function () {
+      lista.classList.remove('burgers__lista--pista');
+      lista.removeEventListener('animationend', alTerminarPista);
+      ['pointerdown', 'touchstart', 'wheel', 'keydown', 'focusin'].forEach(function (t) { lista.removeEventListener(t, apagar); });
+      [ant, sig].forEach(function (f) { f.removeEventListener('click', apagar); });
+      try { localStorage.setItem(CLAVE, '1'); } catch (e) {}
+    };
+    if (!visto && !quieto.matches && 'IntersectionObserver' in window) {
+      var io = new IntersectionObserver(function (es) {
+        if (!es[0].isIntersecting) return;
+        io.disconnect();
+        if (grilla.matches) return;
+        setTimeout(function () {
+          if (grilla.matches) return;
+          lista.classList.add('burgers__lista--pista');
+          ['pointerdown', 'touchstart', 'wheel', 'keydown', 'focusin'].forEach(function (t) { lista.addEventListener(t, apagar, { passive: true }); });
+          [ant, sig].forEach(function (f) { f.addEventListener('click', apagar); });
+          lista.addEventListener('animationend', alTerminarPista);
+        }, 500);
+      }, { threshold: 0.6 });
+      io.observe(lista);
+    }
+
+    // Inclinación y brillo con puntero fino: un listener delegado en la lista, un cuadro por movimiento
+    var fino = window.matchMedia('(hover: hover) and (pointer: fine)');
+    if (fino.matches && !quieto.matches) {
+      var MAX = 6, raf = 0, ev = null, actual = null;
+      var soltar = function (el) {
+        if (!el) return;
+        el.style.setProperty('--rx', '0deg');
+        el.style.setProperty('--ry', '0deg');
+      };
+      lista.addEventListener('pointermove', function (e) {
+        if (e.pointerType !== 'mouse' && e.pointerType !== 'pen') return;
+        ev = e;
+        var el = e.target.closest('.burger__inclina');
+        if (el !== actual) { soltar(actual); actual = el; }
+        if (!el || raf) return;
+        raf = requestAnimationFrame(function () {
+          raf = 0;
+          if (!actual) return;
+          var r = actual.getBoundingClientRect();
+          var x = (ev.clientX - r.left) / r.width, y = (ev.clientY - r.top) / r.height;
+          actual.style.setProperty('--px', x * 100 + '%');
+          actual.style.setProperty('--py', y * 100 + '%');
+          actual.style.setProperty('--ry', ((x - 0.5) * 2 * MAX).toFixed(2) + 'deg');
+          actual.style.setProperty('--rx', ((0.5 - y) * 2 * MAX).toFixed(2) + 'deg');
+        });
+      });
+      // Al hacer scroll la tarjeta se mueve bajo el puntero: se suelta la inclinación
+      lista.addEventListener('scroll', function () {
+        soltar(actual);
+        actual = null;
+      }, { passive: true });
+      lista.addEventListener('pointerleave', function () {
+        soltar(actual);
+        actual = null;
+      });
+    }
+    ant.hidden = false;
+    sig.hidden = false;
+    progreso.hidden = false;
+    c.classList.add('burgers--lista');
+    grilla.addEventListener('change', actualizar);
+    actualizar();
+  });
+</script>
+
+<style>
+  .burgers {
+    --hueco: 1rem;
+    --asoma: 20%;
+    position: relative;
+    /* cqw: las flechas se centran sobre la foto (alto de la foto = ancho de este bloque) */
+    container-type: inline-size;
+  }
+
+  .burgers__lista {
+    display: flex;
+    gap: var(--hueco);
+    margin: 0;
+    list-style: none;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: thin;
+    scrollbar-color: #000 transparent;
+    /* Aire para la sombra dura de las tarjetas, que el overflow recortaría */
+    padding: 0 6px 8px 0;
+    border-radius: var(--radio);
+  }
+
+  /* Con JS hay flechas y progreso: se oculta la barra. Sin JS queda visible y discreta. */
+  .burgers--lista .burgers__lista {
+    scrollbar-width: none;
+  }
+
+  .burgers--lista .burgers__lista::-webkit-scrollbar {
+    display: none;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .burgers__lista {
+      scroll-behavior: smooth;
+    }
+  }
+
+  /* Celular: tarjetas al 80% del ancho para que la siguiente asome (20% menos el hueco) */
+  .burger {
+    flex: 0 0 calc(100% - var(--asoma));
+    scroll-snap-align: start;
+    display: flex;
+  }
+
+  /* Escritorio: todas a la vista, sin scroll ni imán */
+  @media (min-width: 48rem) {
+    .burgers__lista {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 1.75rem 1.5rem;
+      overflow: visible;
+      scroll-snap-type: none;
+      padding: 0 6px 6px 0;
+    }
+
+    .burger {
+      flex: none;
+    }
+  }
+
+  @media (min-width: 64rem) {
+    .burgers__lista {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 2rem 1.5rem;
+    }
+  }
+
+  /* Envoltorio de la inclinación 3D: la tarjeta conserva su transform intacto */
+  .burger__inclina {
+    flex: 1;
+    display: flex;
+    min-width: 0;
+  }
+
+  .burger__tarjeta {
+    position: relative;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    background: var(--fondo-alto);
+    border: 2px solid #000;
+    border-radius: var(--radio);
+    box-shadow: 6px 6px 0 var(--d587-rojo);
+    overflow: hidden;
+  }
+
+  /* Pista de "desliza" (solo celular y solo una vez): la fila se corre y vuelve, y deja ver la siguiente */
+  @media (max-width: 47.99rem) and (prefers-reduced-motion: no-preference) {
+    .burgers__lista--pista .burger__inclina {
+      animation: asoma 1.5s ease-in-out 2;
+    }
+  }
+
+  @keyframes asoma {
+    0%,
+    100% {
+      translate: 0;
+    }
+    35% {
+      translate: -2.75rem;
+    }
+    60% {
+      translate: 0;
+    }
+  }
+
+  /* Hover con puntero fino: inclinación (máx. 6 grados), brillo, zoom de la foto y precio. Todo vuelve con rebote. */
+  @media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+    .burger {
+      perspective: 900px;
+    }
+
+    .burger__inclina {
+      transform: rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
+      transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+      will-change: transform;
+    }
+
+    .burger__tarjeta::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      z-index: 2;
+      pointer-events: none;
+      opacity: 0;
+      background: radial-gradient(circle at var(--px, 50%) var(--py, 50%), rgb(255 255 255 / 0.28), transparent 55%);
+      transition: opacity 0.3s;
+    }
+
+    .burger__inclina:hover .burger__tarjeta::before {
+      opacity: 1;
+    }
+
+    .burger__foto :global(img) {
+      transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .burger__inclina:hover .burger__foto :global(img) {
+      transform: scale(1.06);
+    }
+
+    .burger__precio {
+      transition: translate 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .burger__inclina:hover .burger__precio {
+      translate: 0 -0.2rem;
+    }
+  }
+
+  /* Entrada ligada al scroll, en la tarjeta (el li lleva el imán y .burger__inclina el hover 3D, ninguno se toca).
+     La línea de tiempo vive en .burgers, fuera del scroller horizontal del celular: view() directo en las tarjetas
+     seguiría el scroll horizontal de la lista. El estado inicial oculto vive solo aquí. */
+  @media (prefers-reduced-motion: no-preference) {
+    @supports (animation-timeline: view()) {
+      .burgers {
+        view-timeline: --burgers block;
+      }
+    }
+  }
+
+  @media (prefers-reduced-motion: no-preference) and (max-width: 47.99rem) {
+    @supports (animation-timeline: view()) {
+      /* Celular: entran deslizando desde la derecha. Solo las que se ven al inicio; el resto no se anima */
+      .burger:nth-child(-n + 3) .burger__tarjeta {
+        animation: burger-desliza ease-out both;
+        animation-timeline: --burgers;
+        animation-range: entry calc(var(--n) * 6%) entry calc(40% + var(--n) * 6%);
+      }
+    }
+  }
+
+  /* Escritorio: se reparten como naipes desde una pila en el centro de la grilla, con giro y escala escalonados.
+     El desplazamiento de cada tarjeta hacia el centro sale de su columna y fila (--c, --f) */
+  @media (prefers-reduced-motion: no-preference) and (min-width: 48rem) {
+    @supports (animation-timeline: view()) {
+      .burger .burger__tarjeta {
+        --medio-c: 0.5;
+        --medio-f: var(--medio-f2);
+        --c: var(--c2);
+        --f: var(--f2);
+        animation: burger-reparte ease-out both;
+        animation-timeline: --burgers;
+        animation-range: entry calc(10% + var(--n) * 3%) entry calc(50% + var(--n) * 3%);
+      }
+    }
+  }
+
+  @media (prefers-reduced-motion: no-preference) and (min-width: 64rem) {
+    @supports (animation-timeline: view()) {
+      .burger .burger__tarjeta {
+        --medio-c: 1.5;
+        --medio-f: var(--medio-f4);
+        --c: var(--c4);
+        --f: var(--f4);
+      }
+    }
+  }
+
+  @keyframes burger-desliza {
+    from {
+      opacity: 0;
+      translate: 3rem 0;
+    }
+  }
+
+  @keyframes burger-reparte {
+    from {
+      opacity: 0;
+      scale: 0.8;
+      rotate: calc((var(--n) - 3.5) * 4deg);
+      translate: calc((var(--medio-c) - var(--c)) * (100% + 1.5rem)) calc((var(--medio-f) - var(--f)) * (100% + 1.75rem));
+    }
+  }
+
+  .burger__foto {
+    aspect-ratio: 4 / 5;
+    background: #141414;
+    overflow: hidden;
+  }
+
+  .burger__foto :global(picture),
+  .burger__foto :global(img) {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  /* Sin position: el ::after del enlace estirado debe medirse contra la tarjeta */
+  .burger__cuerpo {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 1.1rem 1.25rem 1.25rem;
+    border-top: 4px solid;
+    border-image: linear-gradient(90deg, var(--d587-naranja), var(--d587-rojo)) 1;
+  }
+
+  .burger__numero {
+    font-family: var(--display);
+    font-size: 1.1rem;
+    color: var(--d587-naranja);
+  }
+
+  .burger h3 {
+    font-size: 2rem;
+    color: var(--d587-blanco, #fff);
+  }
+
+  .burger__desc {
+    color: var(--texto-suave);
+    flex: 1;
+  }
+
+  .burger__pie {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.25rem 0.75rem;
+  }
+
+  .burger__precio {
+    font-size: 2.1rem;
+  }
+
+  /* Enlace principal estirado: su ::after cubre toda la tarjeta (el foco y el toque caen en él) */
+  .detalle-burger {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.2rem;
+    min-height: 2.75rem;
+    color: #fff;
+    font-weight: 600;
+    text-decoration: underline;
+    text-underline-offset: 0.25em;
+    text-decoration-thickness: 1px;
+  }
+
+  .detalle-burger svg {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2.5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  .detalle-burger::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 3;
+    cursor: pointer;
+  }
+
+  /* Anillo de foco de dos tonos, pegado al borde (la tarjeta recorta lo que sale de ella) */
+  .detalle-burger:focus-visible {
+    outline: none;
+  }
+
+  .detalle-burger:focus-visible::after {
+    box-shadow: inset 0 0 0 3px #000, inset 0 0 0 6px var(--d587-amarillo);
+    border-radius: var(--radio);
+  }
+
+  /* Flechas sobre los costados de la foto: 44 px o más, negras con la flecha blanca */
+  .burgers__flecha {
+    position: absolute;
+    z-index: 4;
+    top: calc(50cqw - 1.5rem);
+    width: 3rem;
+    height: 3rem;
+    display: grid;
+    place-items: center;
+    padding: 0;
+    color: #fff;
+    background: #000;
+    border: 2px solid #fff;
+    border-radius: 50%;
+    cursor: pointer;
+  }
+
+  .burgers__flecha[hidden] {
+    display: none;
+  }
+
+  .burgers__flecha--ant {
+    left: 0.5rem;
+  }
+
+  .burgers__flecha--sig {
+    right: calc(var(--asoma) + 0.5rem);
+  }
+
+  .burgers__flecha[aria-disabled='true'] {
+    opacity: 0.35;
+    cursor: default;
+  }
+
+  .burgers__flecha svg {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2.5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  .burgers__flecha:focus-visible {
+    outline: 3px solid transparent;
+    box-shadow: 0 0 0 3px #000, 0 0 0 6px var(--d587-amarillo);
+  }
+
+  /* Progreso: "3 de 8" y una barra. Banda crema: sobre el cuadrillé no hay contraste fijo */
+  .burgers__progreso {
+    display: flex;
+    align-items: center;
+    gap: 0.9rem;
+    margin-top: 1rem;
+    padding: 0.55rem 1rem;
+    background: var(--crema);
+    border-radius: 999px;
+    color: #000;
+    font-weight: 700;
+  }
+
+  .burgers__progreso[hidden] {
+    display: none;
+  }
+
+  .burgers__barra {
+    flex: 1;
+    height: 0.5rem;
+    background: rgb(0 0 0 / 0.18);
+    border-radius: 999px;
+    overflow: hidden;
+  }
+
+  .burgers__relleno {
+    display: block;
+    height: 100%;
+    width: calc(100% / 8);
+    background: #000;
+    border-radius: 999px;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .burgers__relleno {
+      transition: width 0.25s ease-out;
+    }
+  }
+
+  .burgers__conteo {
+    flex: none;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Escritorio: todo está a la vista, sin flechas ni progreso */
+  @media (min-width: 48rem) {
+    .burgers__flecha,
+    .burgers__progreso {
+      display: none !important;
+    }
+  }
+</style>

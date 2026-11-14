@@ -1,8 +1,20 @@
 ---
-import svg from '../assets/marca/distrito587-logo-armado.svg?raw';
+import svgCrudo from '../assets/marca/distrito587-logo-armado.svg?raw';
+
+// El texto del h1 va en un span oculto (legible para buscadores y lectores de pantalla);
+// el SVG queda decorativo para que el nombre no se lea dos veces.
+const svg = svgCrudo.replace(/\srole="img"\saria-label="[^"]*"/, ' aria-hidden="true" focusable="false"');
+
+// Si el SVG cambia y el reemplazo ya no aplica, el h1 quedaría con el SVG anunciado dos veces: que el build falle
+if (svg === svgCrudo) {
+  throw new Error('LogoArmado: no se pudo reemplazar role/aria-label del SVG; revisa distrito587-logo-armado.svg');
+}
 ---
 
-<h1 class="hero__logo" set:html={svg} />
+<h1 class="hero__logo">
+  <span class="visualmente-oculto">Distrito 587, smash burgers en Osorno</span>
+  <Fragment set:html={svg} />
+</h1>
 
 <style is:global>
   .hero__logo {

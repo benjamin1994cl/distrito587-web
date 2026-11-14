@@ -20,6 +20,7 @@ const secciones = [
   { href: '#t-papas', etiqueta: 'Papas' },
   ...(tocomples ? [{ href: '#t-tocomples', etiqueta: 'Tocomples' }] : []),
   { href: '#t-extras', etiqueta: 'Extras' },
+  { href: '#t-preguntas', etiqueta: 'Preguntas' },
   { href: '#t-local', etiqueta: 'Local' },
 ];
 
@@ -239,7 +240,7 @@ const boton =
   .navbar__enlaces a {
     position: relative;
     display: block;
-    padding: 0.7rem 0.85rem;
+    padding: 0.7rem var(--pad-enlace, 0.85rem);
     color: #fff;
     font-weight: 600;
     font-size: 1.05rem;
@@ -255,7 +256,7 @@ const boton =
   .navbar__enlaces a::after {
     content: '';
     position: absolute;
-    inset: auto 0.85rem 0.3rem;
+    inset: auto var(--pad-enlace, 0.85rem) 0.3rem;
     height: 8px;
     /* Onda tipo salsa: un tramo de 20 x 8 que se repite; el color es el fondo */
     background: var(--d587-amarillo);
@@ -295,6 +296,13 @@ const boton =
   @media (min-width: 56rem) {
     .navbar__enlaces {
       display: flex;
+    }
+  }
+
+  /* Entre 56rem y 64rem el espacio es justo: enlaces con menos relleno para que quede holgura sin desborde */
+  @media (min-width: 56rem) and (max-width: 63.99rem) {
+    .navbar__enlaces {
+      --pad-enlace: 0.65rem;
     }
   }
 

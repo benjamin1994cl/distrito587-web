@@ -1,0 +1,14 @@
+{
+  "actualizado": "2026-11-13",
+  "plataformas": [
+    {
+      "id": "google",
+      "nombre": "Google",
+      "nota": 3.9,
+      "cantidad": 7,
+      "url": "https://www.google.com/maps/search/?api=1&query=Distrito587%20Ram%C3%B3n%20Freire%20587%20Osorno"
+    },
+    { "id": "ubereats", "nombre": "Uber Eats", "nota": 4.1, "cantidad": 15, "url": "" }
+  ],
+  "destacadas": []
+}

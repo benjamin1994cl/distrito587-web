@@ -18,7 +18,7 @@ const polaroids = [
 ---
 
 <section class="seccion-papas bloque bloque--papas" aria-labelledby="t-papas">
-  <Borde forma="queso" />
+  <Borde forma="dentado" />
   <div class="contenedor papas__grid">
     <div class="papas__texto">
       <div class="seccion__titulo papas__encabezado">
@@ -51,26 +51,26 @@ const polaroids = [
           </div>
         </div>
         <div class="papas__sello" aria-hidden="true"><span>De<br />regalo</span></div>
+        <ul class="papas__fotos" role="list">
+          {
+            polaroids.map((p) => (
+              <li class={`papas__foto papas__foto--${p.clase}`}>
+                <figure class="papas__polaroid">
+                  <Picture
+                    src={p.foto}
+                    alt={p.alt}
+                    widths={p.widths}
+                    sizes="(min-width: 30rem) 10rem, 40vw"
+                    formats={['avif', 'webp']}
+                    loading="lazy"
+                    decoding="async"
+                  />
+                </figure>
+              </li>
+            ))
+          }
+        </ul>
       </div>
-      <ul class="papas__fotos" role="list">
-        {
-          polaroids.map((p) => (
-            <li class={`papas__foto papas__foto--${p.clase}`}>
-              <figure class="papas__polaroid">
-                <Picture
-                  src={p.foto}
-                  alt={p.alt}
-                  widths={p.widths}
-                  sizes="(min-width: 64rem) 12rem, 60vw"
-                  formats={['avif', 'webp']}
-                  loading="lazy"
-                  decoding="async"
-                />
-              </figure>
-            </li>
-          ))
-        }
-      </ul>
     </div>
   </div>
 </section>
@@ -199,7 +199,7 @@ const polaroids = [
     position: absolute;
     z-index: 2;
     top: -1.4rem;
-    left: -1.4rem;
+    right: -1.4rem;
     display: grid;
     place-items: center;
     width: 6.5rem;
@@ -213,47 +213,63 @@ const polaroids = [
     box-shadow: 0 0.5rem 1.5rem rgb(0 0 0 / 0.4);
   }
 
-  /* Celular y tablet: carrusel corto con imán bajo el video, sin desbordar la página */
+  /* Polaroids montadas sobre las esquinas de la ventana, fuera del marco recortado.
+     El centro queda libre: ahí van el texto y el logo quemados en el video. */
   .papas__fotos {
-    display: flex;
-    gap: 1rem;
-    margin: 2.25rem 0 0;
-    padding: 0.5rem 0.25rem 1.25rem;
+    position: absolute;
+    z-index: 3;
+    inset: 0;
+    margin: 0;
+    padding: 0;
     list-style: none;
-    overflow-x: auto;
-    overscroll-behavior-x: contain;
-    scroll-snap-type: x mandatory;
-    scrollbar-width: none;
-  }
-
-  .papas__fotos::-webkit-scrollbar {
-    display: none;
+    pointer-events: none;
   }
 
   .papas__foto {
-    flex: 0 0 62%;
-    scroll-snap-align: center;
+    position: absolute;
+    pointer-events: auto;
     rotate: var(--giro, 0deg);
   }
 
   .papas__foto--cono {
-    --giro: -3deg;
+    --k: 2;
+    --vx: 9rem;
+    --vy: 7rem;
+    --vg: 55deg;
+    --giro: 7deg;
     --proporcion: 3 / 4;
+    right: -1.25rem;
+    bottom: -2.5%;
+    width: 40%;
   }
 
   .papas__foto--caja {
-    --giro: 2.5deg;
+    --k: 0;
+    --vx: -9rem;
+    --vy: -7rem;
+    --vg: -60deg;
+    --giro: -8deg;
     --proporcion: 4 / 5;
+    top: -3%;
+    left: -1.25rem;
+    width: 32%;
   }
 
   .papas__foto--diario {
-    --giro: -2deg;
+    --k: 1;
+    --vx: -9rem;
+    --vy: 5rem;
+    --vg: -40deg;
+    --giro: 5deg;
     --proporcion: 4 / 5;
+    bottom: 1%;
+    left: -1.25rem;
+    width: 28%;
   }
 
   .papas__polaroid {
     margin: 0;
-    padding: 0.55rem 0.55rem 1.7rem;
+    padding: 0.35rem 0.35rem 1.1rem;
     background: #fffaf0;
     box-shadow: 0 0.6rem 1.4rem rgb(0 0 0 / 0.3);
   }
@@ -272,43 +288,9 @@ const polaroids = [
     background: #2a2118;
   }
 
-  /* Escritorio: las fotos asoman detrás de la ventana, inclinadas y a medio cubrir */
-  @media (min-width: 64rem) {
-    .papas__grid {
-      padding-inline-end: 7rem;
-    }
-
-    .papas__fotos {
-      display: block;
-      margin: 0;
-      padding: 0;
-      overflow: visible;
-    }
-
-    .papas__foto {
-      position: absolute;
-      z-index: 0;
-    }
-
-    .papas__foto--cono {
-      --giro: 7deg;
-      top: 5%;
-      right: -7rem;
-      width: 12rem;
-    }
-
-    .papas__foto--caja {
-      --giro: -8deg;
-      bottom: 12%;
-      left: -5rem;
-      width: 10rem;
-    }
-
-    .papas__foto--diario {
-      --giro: 5deg;
-      bottom: 2%;
-      right: -5rem;
-      width: 9.5rem;
+  @media (min-width: 30rem) {
+    .papas__polaroid {
+      padding: 0.55rem 0.55rem 1.7rem;
     }
   }
 
@@ -352,17 +334,23 @@ const polaroids = [
         animation-range: entry 5% entry 90%;
       }
 
-      .papas__sello {
-        animation: papas-sello linear both;
-        animation-timeline: view();
-        animation-range: entry 40% cover 55%;
+      .papas__ventana {
+        view-timeline: --ventana block;
       }
 
-      /* Entran girando: el giro de reposo va en la propiedad rotate del li, la entrada en el figure */
+      /* El sello cae y rebota con translate y scale: su transform de reposo y el rotate del hover quedan intactos */
+      .papas__sello {
+        animation: papas-sello linear both;
+        animation-timeline: --ventana;
+        animation-range: entry 55% entry 100%;
+      }
+
+      /* Llegan volando y girando desde fuera de la ventana. El giro de reposo va en la propiedad rotate del li
+         (y el hover lo endereza); la entrada va en el transform del figure. Cada una trae su vector (--vx, --vy, --vg) */
       .papas__polaroid {
-        animation: papas-polaroid linear both;
-        animation-timeline: view();
-        animation-range: entry 0% entry 100%;
+        animation: papas-polaroid cubic-bezier(0.34, 1.56, 0.64, 1) both;
+        animation-timeline: --ventana;
+        animation-range: entry calc(20% + var(--k, 0) * 12%) entry calc(70% + var(--k, 0) * 12%);
       }
 
       /* El titular anima su texto interno: el h2 es destino del ancla y no debe desplazarse */
@@ -404,14 +392,37 @@ const polaroids = [
   @keyframes papas-polaroid {
     from {
       opacity: 0;
-      transform: translateY(3rem) rotate(-24deg) scale(0.85);
+      transform: translate(var(--vx), var(--vy)) rotate(var(--vg)) scale(0.7);
     }
   }
 
   @keyframes papas-sello {
-    from {
+    0% {
       opacity: 0;
-      transform: rotate(-60deg) scale(0.3);
+      scale: 1.5;
+      translate: 0 -7rem;
+    }
+    15% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 1;
+      scale: 1;
+      translate: 0 0;
+    }
+    68% {
+      translate: 0 -1.1rem;
+    }
+    84% {
+      translate: 0 0;
+    }
+    92% {
+      translate: 0 -0.4rem;
+    }
+    100% {
+      opacity: 1;
+      scale: 1;
+      translate: 0 0;
     }
   }
 

@@ -171,10 +171,6 @@ a {
   color: #000;
 }
 
-.boton--claro:hover {
-  background: rgb(0 0 0 / 0.06);
-}
-
 .boton--amarillo {
   background: var(--d587-amarillo);
   border-color: var(--d587-amarillo);
@@ -185,8 +181,15 @@ a {
   color: #fff;
 }
 
-.boton--borde:hover {
-  background: rgb(255 255 255 / 0.08);
+
+@media (hover: hover) and (pointer: fine) {
+  .boton--claro:hover {
+    background: rgb(0 0 0 / 0.06);
+  }
+
+  .boton--borde:hover {
+    background: rgb(255 255 255 / 0.08);
+  }
 }
 
 .precio {
@@ -292,8 +295,6 @@ main {
 
 /* Crema: texto negro. Foco negro (el amarillo sobre crema da 1,38:1) */
 .bloque--burgers {
-  /* gris medio del papel con velo: la franja cuadrillé de arriba (Borde) no puede ser la foto */
-  --borde-color: #bfbdb9;
   --titulo: #000;
   --suave: #262626;
   --trazo: var(--d587-rojo);
@@ -361,7 +362,7 @@ main {
 
 /* Rojo a naranja: texto negro */
 .bloque--papas {
-  /* el queso que gotea arriba lo dibuja Borde con su propio cheddar; esta variable queda de respaldo */
+  /* el dentado de arriba lo dibuja Borde (sube sobre Burgers con este rojo) */
   --borde-color: var(--d587-rojo);
   --titulo: #000;
   --suave: #000;
@@ -387,7 +388,6 @@ main {
 }
 
 .bloque--extras {
-  --borde-color: var(--d587-amarillo);
   /* Semillas de sésamo en #f4c21f sobre el amarillo de marca: el amarillo liso se veía plano.
      Texto negro sobre #f4c21f: 12,58:1 (AA pide 4,5:1). */
   --textura-sesamo: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='72' height='72' fill='%23f4c21f'%3E%3Cellipse cx='12' cy='10' rx='3.6' ry='1.8' transform='rotate(-30 12 10)'/%3E%3Cellipse cx='46' cy='18' rx='3.6' ry='1.8' transform='rotate(25 46 18)'/%3E%3Cellipse cx='28' cy='38' rx='3.6' ry='1.8' transform='rotate(70 28 38)'/%3E%3Cellipse cx='62' cy='50' rx='3.6' ry='1.8' transform='rotate(-15 62 50)'/%3E%3Cellipse cx='10' cy='60' rx='3.6' ry='1.8' transform='rotate(40 10 60)'/%3E%3Cellipse cx='40' cy='64' rx='3.6' ry='1.8' transform='rotate(-55 40 64)'/%3E%3C/svg%3E");
@@ -468,31 +468,67 @@ main {
   color: var(--suave);
 }
 
+/* Entrada de los títulos ligada al scroll. Todo el estado inicial oculto vive aquí: sin soporte o con reduce,
+   el título se ve completo. El número se descubre de izquierda a derecha, cada palabra sube desde una máscara
+   y el subrayado se traza. Se anima dentro del h2 (nunca el h2 con id: es destino de ancla). */
 @media (prefers-reduced-motion: no-preference) {
   @supports (animation-timeline: view()) {
+    .seccion__titulo {
+      view-timeline: --tit block;
+    }
+
     .seccion__titulo::before {
       animation: titulo-numero linear both;
-      animation-timeline: view();
-      animation-range: entry 0% entry 90%;
+      animation-timeline: --tit;
+      animation-range: cover 4% cover 24%;
+    }
+
+    /* Máscara por palabra: el recorte deja pasar el halo lateral y superior, solo corta por abajo */
+    .pal {
+      display: inline-block;
+      vertical-align: top;
+      padding-bottom: 0.12em;
+      margin-bottom: -0.12em;
+      clip-path: inset(-0.3em -0.3em 0 -0.3em);
+    }
+
+    .pal > span {
+      display: inline-block;
+      animation: titulo-palabra linear both;
+      animation-timeline: --tit;
+      animation-range: cover calc(8% + var(--i, 0) * 3%) cover calc(26% + var(--i, 0) * 3%);
     }
 
     .seccion__titulo h2::after {
       animation: titulo-subrayado linear both;
-      animation-timeline: view();
-      animation-range: entry 30% entry 100%;
+      animation-timeline: --tit;
+      animation-range: cover 16% cover 34%;
     }
   }
 }
 
 @keyframes titulo-numero {
   from {
-    opacity: 0;
-    transform: translateX(-1.5rem) rotate(-6deg);
+    clip-path: inset(-10% 110% -10% -10%);
+    translate: -1rem 0;
+  }
+  to {
+    clip-path: inset(-10% -10% -10% -10%);
+    translate: 0 0;
+  }
+}
+
+@keyframes titulo-palabra {
+  from {
+    transform: translateY(110%);
   }
 }
 
 @keyframes titulo-subrayado {
   from {
-    transform: scaleX(0);
+    clip-path: inset(0 100% 0 0);
+  }
+  to {
+    clip-path: inset(0 0 0 0);
   }
 }

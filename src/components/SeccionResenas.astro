@@ -1,0 +1,340 @@
+---
+// Valoraciones: insignias con la nota de cada plataforma y, cuando haya, reseñas destacadas.
+// Los datos viven en data/resenas.json. Sin reseñas destacadas solo se ven las insignias.
+// A propósito no hay AggregateRating ni Review en el JSON-LD: las notas se citan de plataformas externas.
+import google from '../assets/iconos/google.svg?raw';
+import uberEats from '../assets/iconos/ubereats.svg?raw';
+import resenas from '../data/resenas.json';
+import Borde from './Borde.astro';
+import { datos } from '../lib/local';
+
+interface Destacada {
+  autor: string;
+  estrellas: number;
+  fecha: string;
+  texto: string;
+  url: string;
+  plataforma: string;
+}
+
+const limpio = (svg: string) =>
+  svg
+    .replace(/<title>.*?<\/title>/, '')
+    .replace(/ role="img"/, '')
+    .replace('<svg ', '<svg aria-hidden="true" focusable="false" fill="currentColor" ');
+
+const iconos: Record<string, string> = { google: limpio(google), ubereats: limpio(uberEats) };
+
+// La URL de Uber Eats sale de local.json para no duplicarla
+const urlPlataforma = (id: string, propia: string) =>
+  propia || datos.delivery.find((d) => d.id === id)?.url || '';
+
+const coma = (n: number) => n.toFixed(1).replace('.', ',');
+// Las fechas de data/resenas.json deben ser YYYY-MM-DD; si no, el build falla
+const fechaIso = (iso: string) => {
+  const dia = String(iso).slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dia) || Number.isNaN(Date.parse(dia))) {
+    throw new Error(`resenas.json: fecha inválida "${iso}", se espera YYYY-MM-DD`);
+  }
+  return dia;
+};
+const fechaLarga = (iso: string) =>
+  new Date(fechaIso(iso) + 'T12:00:00Z').toLocaleDateString('es-CL', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+    timeZone: 'UTC',
+  });
+
+const plataformas = resenas.plataformas
+  .map((p) => ({ ...p, url: urlPlataforma(p.id, p.url), icono: iconos[p.id] ?? '' }))
+  .filter((p) => p.url && p.nota > 0);
+const destacadas = (resenas.destacadas ?? []) as Destacada[];
+const nombrePlataforma = (id: string) => resenas.plataformas.find((p) => p.id === id)?.nombre ?? '';
+
+// Cinco estrellas con relleno parcial: el relleno es la misma fila recortada al ancho de la nota
+const estrella = 'M12 2.6l2.9 6.1 6.7.9-4.9 4.6 1.2 6.6L12 17.5l-5.9 3.3 1.2-6.6L2.4 9.6l6.7-.9z';
+const estrellas = (nota: number) => {
+  const fila = Array.from({ length: 5 }, (_, i) => `<path transform="translate(${i * 24} 0)" d="${estrella}"/>`).join('');
+  // Cada estrella ocupa 24 unidades y su dibujo va de 2,4 a 21,6: el recorte cuenta ese margen
+  const v = Math.max(0, Math.min(5, nota));
+  const n = Math.floor(v);
+  const f = v - n;
+  const x = n * 24 + (f > 0 ? 2.4 + f * 19.2 : 0);
+  const pct = (x / 120) * 100;
+  return `<span class="estrellas" aria-hidden="true"><svg class="estrellas__base" viewBox="0 0 120 24" focusable="false">${fila}</svg><svg class="estrellas__lleno" viewBox="0 0 120 24" focusable="false" style="clip-path: inset(0 ${(100 - pct).toFixed(1)}% 0 0)">${fila}</svg></span>`;
+};
+---
+
+{
+  (plataformas.length > 0 || destacadas.length > 0) && (
+    <section class="bloque bloque--resenas" aria-labelledby="t-opiniones">
+      <Borde forma="lechuga" />
+      <div class="contenedor">
+        <div class="seccion__titulo">
+          <h2 id="t-opiniones"><span class="pal" style="--i:0"><span>Lo</span></span>{' '}<span class="pal" style="--i:1"><span>que</span></span>{' '}<span class="pal" style="--i:2"><span>dicen</span></span></h2>
+          <p>Las notas de quienes ya probaron las burgers.</p>
+        </div>
+
+        {
+          plataformas.length > 0 && (
+            <ul class="insignias">
+              {plataformas.map((p, i) => (
+                <li style={`--i:${i}`}>
+                  <a class="insignia" href={p.url} target="_blank" rel="noopener">
+                    <span class="insignia__logo" set:html={p.icono} />
+                    <span class="insignia__cuerpo">
+                      <Fragment set:html={estrellas(p.nota)} />
+                      <span class="insignia__texto">
+                        {`${coma(p.nota)} de 5 en ${p.nombre} (${p.cantidad} ${p.cantidad === 1 ? 'reseña' : 'reseñas'})`}
+                      </span>
+                    </span>
+                    <span class="visualmente-oculto"> (se abre en una pestaña nueva)</span>
+                  </a>
+                </li>
+              ))}
+            </ul>
+          )
+        }
+
+        {
+          destacadas.length > 0 && (
+            <ul class="destacadas">
+              {destacadas.map((r, i) => (
+                <li class="resena" style={`--i:${i}`}>
+                  <figure>
+                    <Fragment set:html={estrellas(r.estrellas)} />
+                    <p class="visualmente-oculto">{r.estrellas} de 5 estrellas</p>
+                    <blockquote>
+                      <p>{r.texto}</p>
+                    </blockquote>
+                    <figcaption>
+                      <strong>{r.autor}</strong>
+                      <time datetime={fechaIso(r.fecha)}>{fechaLarga(r.fecha)}</time>
+                      {r.url && (
+                        <a href={r.url} target="_blank" rel="noopener">
+                          Ver en {nombrePlataforma(r.plataforma) || 'la plataforma'}
+                          <span class="visualmente-oculto"> (se abre en una pestaña nueva)</span>
+                        </a>
+                      )}
+                    </figcaption>
+                  </figure>
+                </li>
+              ))}
+            </ul>
+          )
+        }
+
+        <p class="resenas__fecha">Actualizado el {fechaLarga(resenas.actualizado)}</p>
+      </div>
+    </section>
+  )
+}
+
+<style>
+  /* Crema: texto negro. La lechuga rizada arriba (Borde) cae sobre el amarillo de Extras */
+  .bloque--resenas {
+    --titulo: #000;
+    --suave: #262626;
+    --trazo: var(--d587-rojo);
+    --subrayado: var(--d587-rojo);
+    background: var(--crema);
+    color: #000;
+  }
+
+  .bloque--resenas :global(:focus-visible) {
+    outline-color: #000;
+  }
+
+  .insignias,
+  .destacadas {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .insignias {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem 1rem;
+  }
+
+  .insignia {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    min-height: 2.75rem;
+    padding: 0.55rem 1rem;
+    background: #fff;
+    color: #000;
+    text-decoration: none;
+    border: 2px solid #000;
+    border-radius: var(--radio);
+    box-shadow: 3px 3px 0 #000;
+  }
+
+  .insignia__logo :global(svg) {
+    display: block;
+    width: 1.75rem;
+    height: 1.75rem;
+  }
+
+  .insignia__cuerpo {
+    display: grid;
+    gap: 0.1rem;
+  }
+
+  .insignia__texto {
+    font-weight: 600;
+    font-size: 1rem;
+  }
+
+  @media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+    .insignia {
+      transition: translate 0.2s, box-shadow 0.2s;
+    }
+
+    .insignia:hover {
+      translate: -2px -2px;
+      box-shadow: 5px 5px 0 #000;
+    }
+  }
+
+  /* Estrellas (marcado de set:html, sin atributo de alcance, por eso :global): base gris y fila roja encima, recortada al ancho de la nota */
+  .bloque--resenas :global(.estrellas) {
+    position: relative;
+    display: block;
+    width: 6.5rem;
+    height: 1.3rem;
+  }
+
+  .bloque--resenas :global(.estrellas svg) {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+
+  .bloque--resenas :global(.estrellas__base) {
+    fill: #d9d2c7;
+  }
+
+  .bloque--resenas :global(.estrellas__lleno) {
+    fill: #c8280b;
+  }
+
+  .destacadas {
+    display: grid;
+    gap: 1.25rem;
+    margin-top: 2rem;
+  }
+
+  @media (min-width: 48rem) {
+    .destacadas {
+      grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr));
+    }
+  }
+
+  .resena figure {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    height: 100%;
+    margin: 0;
+    padding: 1.25rem;
+    background: #fff;
+    border: 2px solid #000;
+    border-radius: var(--radio);
+    box-shadow: 4px 4px 0 #000;
+  }
+
+  .resena blockquote {
+    flex: 1;
+    margin: 0;
+    font-size: 1.05rem;
+    line-height: 1.45;
+  }
+
+  .resena figcaption {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.2rem 0.75rem;
+    font-size: 0.95rem;
+    color: #262626;
+  }
+
+  .resena figcaption time {
+    white-space: nowrap;
+  }
+
+  .resena figcaption strong {
+    color: #000;
+  }
+
+  .resena figcaption a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 2.75rem;
+    color: #000;
+    font-weight: 600;
+  }
+
+  /* Reseñas apiladas como notas: giro de reposo alterno (propiedad rotate) y entrada con translate, scale y opacity.
+     Hoy destacadas está vacío; el estilo queda listo para cuando haya elementos. */
+  .resena:nth-child(odd) {
+    rotate: -0.8deg;
+  }
+
+  .resena:nth-child(even) {
+    rotate: 0.9deg;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    @supports (animation-timeline: view()) {
+      /* Insignias: caen como sticker. Se anima el li; el hover vive en el enlace */
+      .insignias {
+        view-timeline: --insignias block;
+      }
+
+      .insignias li {
+        animation: resenas-sticker cubic-bezier(0.34, 1.56, 0.64, 1) both;
+        animation-timeline: --insignias;
+        animation-range: cover calc(var(--i, 0) * 5%) cover calc(22% + var(--i, 0) * 5%);
+      }
+
+      .destacadas {
+        view-timeline: --destacadas block;
+      }
+
+      .resena {
+        animation: resenas-nota linear both;
+        animation-timeline: --destacadas;
+        animation-range: entry calc(var(--i, 0) * 10%) entry calc(45% + var(--i, 0) * 10%);
+      }
+    }
+  }
+
+  @keyframes resenas-sticker {
+    from {
+      opacity: 0;
+      scale: 1.3;
+      rotate: -8deg;
+    }
+  }
+
+  @keyframes resenas-nota {
+    from {
+      opacity: 0;
+      translate: 0 2rem;
+      scale: 0.94;
+      rotate: calc(var(--i, 0) * 3deg - 4deg);
+    }
+  }
+
+  .resenas__fecha {
+    margin-top: 1.5rem;
+    font-size: 0.85rem;
+    color: #262626;
+  }
+</style>

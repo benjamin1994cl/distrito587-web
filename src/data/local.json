@@ -5,14 +5,16 @@
   "descripcion": "Hamburguesería smash en Osorno. Burgers con pan de papa y papas fritas caseras de regalo, tocomples, agregados y salsas de la casa.",
   "direccion": {
     "calle": "Freire 587",
+    "calleOficial": "Ramón Freire 587",
+    "codigoPostal": "5312340",
     "comuna": "Osorno",
     "region": "Los Lagos",
     "codigoPais": "CL"
   },
   "mapa": {
-    "consulta": "Freire 587, Osorno, Chile"
+    "consulta": "Ramón Freire 587, Osorno, Chile"
   },
-  "geo": null,
+  "geo": { "lat": -40.57294, "lng": -73.13169 },
   "horario": [
     {
       "etiqueta": "Lunes a sábado",
@@ -38,6 +40,6 @@
     }
   ],
   "pagos": [],
-  "cocina": ["Hamburguesas", "Completos", "Comida rápida"],
-  "rangoPrecios": "$"
+  "cocina": ["Hamburguesas"],
+  "rangoPrecios": "$5.000 a $10.000"
 }

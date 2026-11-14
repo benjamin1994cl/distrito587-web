@@ -9,16 +9,18 @@ import MiniaturaProducto from '../components/MiniaturaProducto.astro';
 import EnlacesPedido from '../components/EnlacesPedido.astro';
 import DialogoFoto from '../components/DialogoFoto.astro';
 import { tieneFoto } from '../lib/fotos-carta';
-import { datos, direccionCorta, urlInstagram } from '../lib/local';
+import { datos, direccionCorta } from '../lib/local';
+import { jsonLdMenu } from '../lib/carta-ld';
 
 const burgers = carta.categorias.find((c) => c.id === 'hamburguesas');
 const desde = burgers ? Math.min(...burgers.productos.map((b) => b.precio)) : 0;
 ---
 
 <Base
-  titulo="Carta · Distrito 587"
-  descripcion={`Carta de Distrito 587 en Osorno: smash burgers desde ${precio(desde)} con papas caseras de regalo, tocomples, papas, agregados, salsas y bebidas.`}
+  titulo="Carta de smash burgers en Osorno | Distrito 587"
+  descripcion={`Carta de Distrito 587, hamburguesería en Osorno: smash burgers desde ${precio(desde)} con papas caseras de regalo, tocomples, agregados y bebidas.`}
   ruta="carta"
+  jsonLd={jsonLdMenu()}
 >
   <main id="contenido">
     <!-- La navbar (Base) hace de cabecera: logo a inicio. Aquí queda solo el título. -->
@@ -72,8 +74,7 @@ const desde = burgers ? Math.min(...burgers.productos.map((b) => b.precio)) : 0;
   {
     datos.delivery.some((d) => d.url) && (
       <aside class="en-casa" aria-labelledby="t-en-casa">
-        <p id="t-en-casa">¿Lo quieres en casa?</p>
-        <EnlacesPedido modo="corto" incluir={['ubereats', 'pedidosya']} />
+        <EnlacesPedido modo="corto" rotulo="¿Lo quieres en casa?" idRotulo="t-en-casa" incluir={['ubereats', 'pedidosya']} />
       </aside>
     )
   }
@@ -82,7 +83,7 @@ const desde = burgers ? Math.min(...burgers.productos.map((b) => b.precio)) : 0;
 
   <footer class="pie-carta">
     <p>{direccionCorta}</p>
-    <p><a href={urlInstagram} target="_blank" rel="noopener">Instagram @{datos.instagram}<span class="visualmente-oculto"> (se abre en una pestaña nueva)</span></a></p>
+    <EnlacesPedido incluir={['instagram']} />
     <p><a href={url()}>Ir al inicio</a></p>
     <Credito />
   </footer>
@@ -316,16 +317,6 @@ const desde = burgers ? Math.min(...burgers.productos.map((b) => b.precio)) : 0;
     margin: 2rem auto 0;
     padding: 1rem max(var(--gutter), env(safe-area-inset-left, 0px));
     border-top: 1px solid var(--borde);
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 0.5rem 1rem;
-  }
-
-  .en-casa > p {
-    font-family: var(--display);
-    font-size: 1.5rem;
-    line-height: 1.1;
   }
 
   .pie-carta {

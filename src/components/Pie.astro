@@ -8,7 +8,7 @@ import Borde from './Borde.astro';
 ---
 
 <footer class="pie">
-  <Borde forma="salsa" />
+  <Borde forma="dentado" />
   <div class="contenedor pie__grid">
     <a href={url()} class="pie__marca">
       <img src={isotipo.src} width="56" height={Math.round((56 * isotipo.height) / isotipo.width)} alt="" loading="lazy" decoding="async" />
@@ -35,7 +35,7 @@ import Borde from './Borde.astro';
     </div>
     <div class="pie__links">
       <a href={url('carta')}>Ver la carta</a>
-      <EnlacesPedido class="pie__iconos" modo="icono" incluir={['ubereats', 'pedidosya', 'instagram']} />
+      <EnlacesPedido class="pie__iconos" modo="icono" rotulo="Pide a domicilio" incluir={['ubereats', 'pedidosya', 'instagram']} />
     </div>
   </div>
   <div class="contenedor">
@@ -88,18 +88,18 @@ import Borde from './Borde.astro';
     gap: 0.5rem;
   }
 
-  .pie__links :global(.enlaces) {
+  .pie__links :global(.pedido) {
     margin-top: 0.5rem;
   }
 
-  .pie__links a:not(.enlace) {
+  .pie__links a:not(.enlace):not(.enlace-ig) {
     align-self: flex-start;
     padding-block: 0.25rem;
     background: linear-gradient(var(--d587-amarillo), var(--d587-amarillo)) left bottom / 0% 2px no-repeat;
   }
 
   @media (hover: hover) and (pointer: fine) {
-    .pie__links a:not(.enlace):hover {
+    .pie__links a:not(.enlace):not(.enlace-ig):hover {
       color: #fff;
       text-decoration-color: transparent;
       background-size: 100% 2px;
@@ -110,8 +110,29 @@ import Borde from './Borde.astro';
     }
   }
 
+  /* Fundido simple al llegar al final de la página */
   @media (prefers-reduced-motion: no-preference) {
-    .pie__links a:not(.enlace) {
+    @supports (animation-timeline: view()) {
+      .pie {
+        view-timeline: --pie block;
+      }
+
+      .pie > .contenedor {
+        animation: pie-fundido linear both;
+        animation-timeline: --pie;
+        animation-range: entry 0% entry 80%;
+      }
+    }
+  }
+
+  @keyframes pie-fundido {
+    from {
+      opacity: 0;
+    }
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .pie__links a:not(.enlace):not(.enlace-ig) {
       transition: background-size 0.3s ease-in-out, color 0.2s ease;
     }
 
