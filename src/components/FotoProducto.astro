@@ -1,6 +1,6 @@
 ---
 // Foto opcional de un producto. Busca src/assets/carta/<imagen>.{avif,webp,jpg,jpeg,png}.
-// Si no existe el archivo (hoy no hay fotos propias), no muestra nada.
+// Si no existe el archivo, muestra el contenido del slot (respaldo) o nada.
 import { Picture } from 'astro:assets';
 import type { ImageMetadata } from 'astro';
 
@@ -9,9 +9,12 @@ interface Props {
   /** Se mantiene por compatibilidad: la foto es decorativa, el h3 ya nombra el producto. */
   alt?: string;
   ancho?: number;
+  /** Si se indica, las variantes se generan recortadas a ancho x alto (fit cover). */
+  alto?: number;
+  sizes?: string;
 }
 
-const { imagen, ancho = 480 } = Astro.props;
+const { imagen, ancho = 480, alto, sizes } = Astro.props;
 const archivos = import.meta.glob<{ default: ImageMetadata }>(
   '../assets/carta/*.{avif,webp,jpg,jpeg,png}',
   { eager: true },
@@ -27,12 +30,14 @@ const encontrada = imagen
       src={encontrada[1].default}
       alt=""
       width={ancho}
-      widths={[ancho / 2, ancho, ancho * 1.5].map(Math.round)}
-      sizes={`(min-width: 48rem) ${ancho / 2}px, 100vw`}
+      height={alto}
+      fit="cover"
+      widths={[ancho / 2, ancho * 0.75, ancho, ancho * 1.2].map(Math.round)}
+      sizes={sizes ?? `(min-width: 48rem) ${ancho / 2}px, 100vw`}
       formats={['avif', 'webp']}
       loading="lazy"
       decoding="async"
       pictureAttributes={{ class: 'foto-producto' }}
     />
-  )
+  ) || <slot />
 }

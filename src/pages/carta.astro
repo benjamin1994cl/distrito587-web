@@ -2,9 +2,13 @@
 // Carta liviana para los QR de las mesas. Una columna, pestañas con anclas
 // (funcionan sin JS) y un script opcional que marca la pestaña activa.
 import Base from '../layouts/Base.astro';
-import isotipo from '../assets/marca/distrito587-isotipo-color.svg';
 import carta from '../data/carta.json';
 import { precio, url } from '../lib/formato';
+import Credito from '../components/Credito.astro';
+import MiniaturaProducto from '../components/MiniaturaProducto.astro';
+import EnlacesPedido from '../components/EnlacesPedido.astro';
+import DialogoFoto from '../components/DialogoFoto.astro';
+import { tieneFoto } from '../lib/fotos-carta';
 import { datos, direccionCorta, urlInstagram } from '../lib/local';
 
 const burgers = carta.categorias.find((c) => c.id === 'hamburguesas');
@@ -16,69 +20,98 @@ const desde = burgers ? Math.min(...burgers.productos.map((b) => b.precio)) : 0;
   descripcion={`Carta de Distrito 587 en Osorno: smash burgers desde ${precio(desde)} con papas caseras de regalo, tocomples, papas, agregados, salsas y bebidas.`}
   ruta="carta"
 >
-  <header class="cabecera">
-    <a href={url()} class="cabecera__marca">
-      <img
-        src={isotipo.src}
-        width="44"
-        height={Math.round((44 * isotipo.height) / isotipo.width)}
-        alt=""
-        decoding="async"
-      />
-      <span>{datos.nombre}</span>
-    </a>
-    <h1>Carta</h1>
-  </header>
+  <main id="contenido">
+    <!-- La navbar (Base) hace de cabecera: logo a inicio. Aquí queda solo el título. -->
+    <div class="cabecera">
+      <h1>Carta</h1>
+    </div>
 
-  <nav class="pestanas" aria-label="Categorías de la carta">
-    <ul>
+    <nav class="pestanas" aria-label="Categorías de la carta">
+      <ul>
+        {
+          carta.categorias.map((c) => (
+            <li>
+              <a href={`#${c.id}`}>{c.nombre}</a>
+            </li>
+          ))
+        }
+      </ul>
+    </nav>
+
+    <div class="carta">
+      <p class="aviso">Todas las burgers llevan papas caseras de regalo</p>
       {
         carta.categorias.map((c) => (
-          <li>
-            <a href={`#${c.id}`}>{c.nombre}</a>
-          </li>
+          <section id={c.id} class="categoria" aria-labelledby={`t-${c.id}`}>
+            <h2 id={`t-${c.id}`}>{c.nombre}</h2>
+            <ul>
+              {c.productos.map((p) => (
+                <li class="producto">
+                  <MiniaturaProducto
+                    imagen={p.imagen}
+                    nombre={p.nombre}
+                    precio={p.precio}
+                    reservar={c.productos.some(tieneFoto)}
+                  />
+                  <div class="producto__cuerpo">
+                    <div class="producto__fila">
+                      <h3>{p.nombre}</h3>
+                      <p class="precio">{precio(p.precio)}</p>
+                    </div>
+                    {p.descripcion && <p class="producto__desc">{p.descripcion}</p>}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </section>
         ))
       }
-    </ul>
-  </nav>
-
-  <main id="contenido" class="carta">
-    <p class="aviso">Todas las burgers llevan papas caseras de regalo</p>
-    {
-      carta.categorias.map((c) => (
-        <section id={c.id} class="categoria" aria-labelledby={`t-${c.id}`}>
-          <h2 id={`t-${c.id}`}>{c.nombre}</h2>
-          <ul>
-            {c.productos.map((p) => (
-              <li class="producto">
-                <div class="producto__fila">
-                  <h3>{p.nombre}</h3>
-                  <p class="precio">{precio(p.precio)}</p>
-                </div>
-                {p.descripcion && <p class="producto__desc">{p.descripcion}</p>}
-              </li>
-            ))}
-          </ul>
-        </section>
-      ))
-    }
+    </div>
   </main>
+
+  {
+    datos.delivery.some((d) => d.url) && (
+      <aside class="en-casa" aria-labelledby="t-en-casa">
+        <p id="t-en-casa">¿Lo quieres en casa?</p>
+        <EnlacesPedido modo="corto" incluir={['ubereats', 'pedidosya']} />
+      </aside>
+    )
+  }
+
+  <DialogoFoto />
 
   <footer class="pie-carta">
     <p>{direccionCorta}</p>
-    <p><a href={urlInstagram} rel="noopener">Instagram @{datos.instagram}</a></p>
+    <p><a href={urlInstagram} target="_blank" rel="noopener">Instagram @{datos.instagram}<span class="visualmente-oculto"> (se abre en una pestaña nueva)</span></a></p>
     <p><a href={url()}>Ir al inicio</a></p>
+    <Credito />
   </footer>
 </Base>
 
 <script>
   // Opcional: marca la pestaña de la categoría visible. Sin JS las anclas igual funcionan.
+  const lista = document.querySelector<HTMLElement>('.pestanas ul')!;
   const enlaces = new Map(
-    [...document.querySelectorAll<HTMLAnchorElement>('.pestanas a')].map((a) => [
-      a.hash.slice(1),
-      a,
-    ]),
+    [...lista.querySelectorAll<HTMLAnchorElement>('a')].map((a) => [a.hash.slice(1), a]),
   );
+  const reducido = matchMedia('(prefers-reduced-motion: reduce)');
+
+  // Degradado solo en el lado donde quedan pestañas ocultas
+  const bordes = () => {
+    const max = lista.scrollWidth - lista.clientWidth;
+    lista.toggleAttribute('data-mas-izq', lista.scrollLeft > 1);
+    lista.toggleAttribute('data-mas-der', lista.scrollLeft < max - 1);
+  };
+
+  // Centra la pestaña activa moviendo solo la fila, nunca la página. Se mide con
+  // getBoundingClientRect: offsetLeft va relativo al contenedor sticky, no a la lista.
+  const centrar = (a: HTMLElement) => {
+    const r = a.getBoundingClientRect();
+    const l = lista.getBoundingClientRect();
+    const destino = lista.scrollLeft + (r.left - l.left) - (lista.clientWidth - r.width) / 2;
+    lista.scrollTo({ left: Math.max(0, destino), behavior: reducido.matches ? 'auto' : 'smooth' });
+  };
+
   const observador = new IntersectionObserver(
     (entradas) => {
       for (const e of entradas) {
@@ -87,70 +120,114 @@ const desde = burgers ? Math.min(...burgers.productos.map((b) => b.precio)) : 0;
         const activo = enlaces.get(e.target.id);
         if (activo) {
           activo.setAttribute('aria-current', 'true');
-          const lista = activo.closest('ul')!;
-          lista.scrollLeft = activo.offsetLeft - (lista.clientWidth - activo.offsetWidth) / 2;
+          centrar(activo);
         }
       }
     },
     { rootMargin: '-30% 0px -60% 0px' },
   );
   document.querySelectorAll('.categoria').forEach((s) => observador.observe(s));
+
+  lista.addEventListener('scroll', bordes, { passive: true });
+  addEventListener('resize', bordes);
+  bordes();
 </script>
 
 <style>
+  /* Altura fija de las pestañas: el scroll-padding de los anclajes la suma a la navbar */
+  :global(:root) {
+    --alto-pestanas: 3.75rem;
+  }
+
+  :global(html:has(.pestanas)) {
+    scroll-padding-top: calc(var(--alto-navbar) + var(--alto-pestanas) + 1rem);
+  }
+
   .cabecera {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 1rem;
     max-width: 40rem;
     margin-inline: auto;
-    padding: 1rem var(--gutter) 0.5rem;
+    padding: 0.75rem max(var(--gutter), env(safe-area-inset-right, 0px)) 0
+      max(var(--gutter), env(safe-area-inset-left, 0px));
   }
 
-  .cabecera__marca {
-    display: flex;
-    align-items: center;
-    gap: 0.6rem;
-    color: #fff;
-    text-decoration: none;
-    font-family: var(--display);
-    font-size: 1.6rem;
-  }
-
+  /* Altura fija: al cargar la fuente el título no mueve la lista */
   .cabecera h1 {
+    height: 1.25em;
+    line-height: 1.25;
     font-size: 2.6rem;
     color: var(--d587-rojo);
   }
 
   .pestanas {
     position: sticky;
-    top: 0;
+    top: var(--alto-navbar);
     z-index: 5;
-    background: rgb(14 14 14 / 0.96);
+    height: var(--alto-pestanas);
+    background: var(--fondo);
     border-bottom: 1px solid var(--borde);
   }
 
+  /* La fila ocupa todo el ancho (el recorte coincide con el borde de la pantalla) y el
+     relleno centra el contenido en la columna de 40rem. */
   .pestanas ul {
+    --fade-izq: 0px;
+    --fade-der: 0px;
     display: flex;
+    align-items: center;
     gap: 0.5rem;
-    max-width: 40rem;
-    margin: 0 auto;
-    padding: 0.6rem var(--gutter);
+    height: 100%;
+    margin: 0;
+    padding: 0
+      max(var(--gutter), env(safe-area-inset-right, 0px), calc((100% - 40rem) / 2 + var(--gutter)))
+      0
+      max(var(--gutter), env(safe-area-inset-left, 0px), calc((100% - 40rem) / 2 + var(--gutter)));
     list-style: none;
     overflow-x: auto;
     scrollbar-width: none;
+    -webkit-mask-image: linear-gradient(
+      to right,
+      transparent,
+      #000 var(--fade-izq),
+      #000 calc(100% - var(--fade-der)),
+      transparent
+    );
+    mask-image: linear-gradient(
+      to right,
+      transparent,
+      #000 var(--fade-izq),
+      #000 calc(100% - var(--fade-der)),
+      transparent
+    );
+  }
+
+  .pestanas ul[data-mas-izq] {
+    --fade-izq: 2rem;
+  }
+
+  .pestanas ul[data-mas-der] {
+    --fade-der: 2rem;
+  }
+
+  .pestanas li {
+    flex: none;
   }
 
   .pestanas a {
-    display: block;
-    padding: 0.55rem 1rem;
+    display: flex;
+    align-items: center;
+    min-height: 2.75rem;
+    padding: 0 1rem;
     border: 1px solid var(--borde);
     border-radius: 999px;
     color: #fff;
     text-decoration: none;
     font-weight: 600;
     white-space: nowrap;
+  }
+
+  .pestanas a:focus-visible {
+    outline: 3px solid var(--d587-amarillo);
+    outline-offset: 2px;
   }
 
   .pestanas a[aria-current] {
@@ -163,7 +240,8 @@ const desde = burgers ? Math.min(...burgers.productos.map((b) => b.precio)) : 0;
   .pie-carta {
     max-width: 40rem;
     margin-inline: auto;
-    padding-inline: var(--gutter);
+    padding-inline: max(var(--gutter), env(safe-area-inset-left, 0px))
+      max(var(--gutter), env(safe-area-inset-right, 0px));
   }
 
   .aviso {
@@ -195,8 +273,16 @@ const desde = burgers ? Math.min(...burgers.productos.map((b) => b.precio)) : 0;
   }
 
   .producto {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.9rem;
     padding-block: 0.9rem;
     border-bottom: 1px solid var(--borde);
+  }
+
+  .producto__cuerpo {
+    flex: 1;
+    min-width: 0;
   }
 
   .producto__fila {
@@ -223,6 +309,23 @@ const desde = burgers ? Math.min(...burgers.productos.map((b) => b.precio)) : 0;
     margin-top: 0.25rem;
     color: var(--texto-suave);
     font-size: 1rem;
+  }
+
+  .en-casa {
+    max-width: 40rem;
+    margin: 2rem auto 0;
+    padding: 1rem max(var(--gutter), env(safe-area-inset-left, 0px));
+    border-top: 1px solid var(--borde);
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem 1rem;
+  }
+
+  .en-casa > p {
+    font-family: var(--display);
+    font-size: 1.5rem;
+    line-height: 1.1;
   }
 
   .pie-carta {

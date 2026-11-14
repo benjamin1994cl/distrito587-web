@@ -1,0 +1,117 @@
+---
+// Enlaces de delivery y redes con logo. Los SVG de simple-icons (CC0) van inline, sin título:
+// el nombre accesible lo da el texto del enlace.
+// PedidosYa no tiene ícono libre: va como botón de texto con su rojo de marca.
+import uberEats from '../assets/iconos/ubereats.svg?raw';
+import instagram from '../assets/iconos/instagram.svg?raw';
+import { datos, urlInstagram } from '../lib/local';
+
+interface Props {
+  /** Qué enlaces mostrar y en qué orden. */
+  incluir?: ('ubereats' | 'pedidosya' | 'instagram')[];
+  /** `texto`: logo y "Pedir en ..."; `corto`: logo y nombre; `icono`: solo logo (con aria-label). */
+  modo?: 'texto' | 'corto' | 'icono';
+  class?: string;
+}
+
+const { incluir = ['ubereats', 'pedidosya'], modo = 'texto', class: clase } = Astro.props;
+
+const limpio = (svg: string) =>
+  svg
+    .replace(/<title>.*?<\/title>/, '')
+    .replace(/ role="img"/, '')
+    .replace('<svg ', '<svg aria-hidden="true" focusable="false" fill="currentColor" ');
+
+const delivery = (id: string) => datos.delivery.find((d) => d.id === id);
+const catalogo = {
+  ubereats: { nombre: 'Uber Eats', url: delivery('ubereats')?.url, icono: limpio(uberEats), accion: 'Pedir en Uber Eats' },
+  pedidosya: { nombre: 'PedidosYa', url: delivery('pedidosya')?.url, icono: '', accion: 'Pedir en PedidosYa' },
+  instagram: { nombre: 'Instagram', url: urlInstagram, icono: limpio(instagram), accion: 'Instagram' },
+};
+const items = incluir.map((id) => ({ id, ...catalogo[id] })).filter((i) => i.url);
+---
+
+{
+  items.length > 0 && (
+    <ul class:list={['enlaces', `enlaces--${modo}`, clase]}>
+      {items.map((i) => (
+        <li>
+          <a
+            class:list={['boton', 'enlace', `enlace--${i.id}`]}
+            href={i.url}
+            target="_blank"
+            rel="noopener"
+            aria-label={modo === 'icono' ? `${i.nombre} (se abre en una pestaña nueva)` : undefined}
+          >
+            {i.icono && <Fragment set:html={i.icono} />}
+            {modo === 'icono' ? (
+              i.id === 'pedidosya' && <span aria-hidden="true">{i.nombre}</span>
+            ) : (
+              <>
+                <span>{modo === 'texto' ? i.accion : i.nombre}</span>
+                <span class="visualmente-oculto"> (se abre en una pestaña nueva)</span>
+              </>
+            )}
+          </a>
+        </li>
+      ))}
+    </ul>
+  )
+}
+
+<style>
+  .enlaces {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .enlace {
+    min-height: 2.75rem;
+    min-width: 2.75rem;
+  }
+
+  .enlace :global(svg) {
+    flex: none;
+    width: 1.6rem;
+    height: 1.6rem;
+  }
+
+  /* Uber Eats: verde de marca con el logo en negro (8,8:1) */
+  .enlace--ubereats {
+    background: #06c167;
+    border-color: #06c167;
+    color: #000;
+  }
+
+  /* PedidosYa: rojo de marca con texto negro (5,2:1; el blanco daría 4,05:1) */
+  .enlace--pedidosya {
+    background: #fa0050;
+    border-color: #fa0050;
+    color: #000;
+  }
+
+  /* Instagram: monocromo, igual que los botones con borde */
+  .enlace--instagram {
+    color: #fff;
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    .enlace--instagram:hover {
+      background: rgb(255 255 255 / 0.08);
+    }
+  }
+
+  .enlaces--icono .enlace {
+    padding: 0.5rem 0.9rem;
+    font-size: 1.1rem;
+  }
+
+  .enlaces--corto .enlace {
+    padding: 0.5rem 1.1rem;
+    font-size: 1.15rem;
+  }
+</style>

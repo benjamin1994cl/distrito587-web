@@ -13,9 +13,11 @@ export interface Horario {
 export const datos = local as typeof local & {
   geo: { lat: number; lng: number } | null;
   horario: Horario[];
+  /** Días de cierre fijos. Solo se muestran: schema.org omite los días cerrados. */
+  cerrado: { etiqueta: string }[];
   whatsapp: string | null;
   telefono: string | null;
-  delivery: { nombre: string; url: string }[];
+  delivery: { id: 'ubereats' | 'pedidosya'; nombre: string; url: string }[];
   pagos: string[];
 };
 
@@ -69,6 +71,8 @@ export function jsonLdRestaurant() {
       closes: h.cierra,
     }));
   }
+  // Delivery: sin OrderAction a propósito. Google solo lo usa con el programa de pedidos de socios
+  // y su validación no se puede comprobar aquí; sameAs ya enlaza el perfil, y las apps van en el HTML
   if (datos.telefono) ld.telephone = datos.telefono;
   return ld;
 }

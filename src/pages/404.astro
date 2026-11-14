@@ -2,6 +2,7 @@
 import Base from '../layouts/Base.astro';
 import logo from '../assets/marca/distrito587-logo-blanco.svg';
 import { url } from '../lib/formato';
+import Credito from '../components/Credito.astro';
 ---
 
 <Base
@@ -19,9 +20,17 @@ import { url } from '../lib/formato';
       <a class="boton boton--borde" href={url()}>Ir al inicio</a>
     </div>
   </main>
+  <footer class="pie-error">
+    <Credito />
+  </footer>
 </Base>
 
 <style>
+  .pie-error {
+    padding: 0 var(--gutter) 2rem;
+    text-align: center;
+  }
+
   .error {
     min-height: 100svh;
     display: grid;

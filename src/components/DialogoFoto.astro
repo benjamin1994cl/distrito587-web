@@ -1,0 +1,146 @@
+---
+// Un único <dialog> reutilizable para ampliar fotos. Se abre desde cualquier a.miniatura.
+---
+
+<dialog id="dialogo-foto" class="dialogo-foto" aria-label="Foto del producto">
+  <button type="button" class="dialogo-foto__cerrar" aria-label="Cerrar">&times;</button>
+  <img alt="" width="1000" height="1000" decoding="async" sizes="(min-width: 48rem) 40rem, 92vw" />
+  <p class="dialogo-foto__pie">
+    <span class="dialogo-foto__nombre"></span>
+    <span class="dialogo-foto__precio"></span>
+  </p>
+</dialog>
+
+<script>
+  const dialogo = document.querySelector<HTMLDialogElement>('#dialogo-foto')!;
+  const img = dialogo.querySelector('img')!;
+  const nombre = dialogo.querySelector('.dialogo-foto__nombre')!;
+  const precio = dialogo.querySelector('.dialogo-foto__precio')!;
+  let origen: HTMLElement | null = null;
+
+  document.querySelectorAll<HTMLAnchorElement>('a.miniatura').forEach((a) => {
+    a.setAttribute('role', 'button');
+    a.addEventListener('click', (e) => {
+      e.preventDefault();
+      origen = a;
+      const d = a.dataset;
+      img.width = Number(d.ancho);
+      img.height = Number(d.alto);
+      img.srcset = d.srcset ?? '';
+      img.src = d.src ?? '';
+      img.alt = `Foto de ${d.nombre}`;
+      nombre.textContent = d.nombre ?? '';
+      precio.textContent = d.precio ?? '';
+      dialogo.showModal();
+    });
+    // role=button: Enter abre en keydown (lo hace el enlace); Espacio abre al soltar, como un
+    // botón nativo, y en keydown solo se evita que la página se desplace.
+    a.addEventListener('keydown', (e) => {
+      if (e.key === ' ') e.preventDefault();
+    });
+    a.addEventListener('keyup', (e) => {
+      if (e.key === ' ') a.click();
+    });
+  });
+
+  dialogo.querySelector('.dialogo-foto__cerrar')!.addEventListener('click', () => dialogo.close());
+  // Clic sobre el propio <dialog> (el fondo): el contenido ocupa todo el cuadro, así que
+  // se compara con sus límites.
+  dialogo.addEventListener('click', (e) => {
+    const r = dialogo.getBoundingClientRect();
+    const dentro =
+      e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom;
+    if (!dentro) dialogo.close();
+  });
+  dialogo.addEventListener('close', () => origen?.focus());
+</script>
+
+<style>
+  .dialogo-foto {
+    margin: auto;
+    padding: 0;
+    width: min(92vw, 40rem);
+    max-height: 92dvh;
+    overflow: auto;
+    border: 1px solid var(--borde);
+    border-radius: var(--radio);
+    background: #141414;
+    color: #fff;
+  }
+
+  .dialogo-foto::backdrop {
+    background: rgb(0 0 0 / 0.82);
+  }
+
+  .dialogo-foto img {
+    display: block;
+    width: 100%;
+    height: auto;
+    max-height: calc(92dvh - 5rem);
+    object-fit: contain;
+    background: #000;
+  }
+
+  .dialogo-foto__pie {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 1rem;
+    padding: 0.9rem 1rem 1rem;
+  }
+
+  .dialogo-foto__nombre {
+    font-weight: 600;
+    font-size: 1.2rem;
+    line-height: 1.25;
+  }
+
+  .dialogo-foto__precio {
+    font-family: var(--display);
+    font-size: 2rem;
+    line-height: 1;
+    color: var(--d587-amarillo);
+  }
+
+  .dialogo-foto__cerrar {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    width: 2.75rem;
+    height: 2.75rem;
+    border: 0;
+    border-radius: 50%;
+    background: rgb(0 0 0 / 0.65);
+    color: #fff;
+    font-size: 1.9rem;
+    line-height: 1;
+    cursor: pointer;
+  }
+
+  .dialogo-foto__cerrar:focus-visible {
+    outline: 3px solid var(--d587-amarillo);
+    outline-offset: 2px;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .dialogo-foto[open] {
+      animation: foto-entra 0.22s ease-out;
+    }
+    .dialogo-foto[open]::backdrop {
+      animation: foto-fondo 0.22s ease-out;
+    }
+  }
+
+  @keyframes foto-entra {
+    from {
+      opacity: 0;
+      transform: scale(0.94);
+    }
+  }
+
+  @keyframes foto-fondo {
+    from {
+      opacity: 0;
+    }
+  }
+</style>

@@ -1,0 +1,72 @@
+---
+// Crédito al final del pie, en todas las páginas.
+import { Image } from 'astro:assets';
+import logoIncba from '../assets/incba-logo.png';
+---
+
+<p class="credito">
+  <a class="credito__enlace" href="https://incba.cl" target="_blank" rel="noopener">
+    <span>Desarrollado por Benja de INCBA<span class="visualmente-oculto"> (se abre en una pestaña nueva)</span></span>
+    <Image
+      src={logoIncba}
+      alt=""
+      height={26}
+      width={Math.round((26 * logoIncba.width) / logoIncba.height)}
+      densities={[1, 2]}
+      format="webp"
+      loading="lazy"
+      decoding="async"
+      class="credito__logo"
+    />
+  </a>
+</p>
+
+<style>
+  .credito {
+    margin: 1.5rem 0 0;
+    font-size: 0.8rem;
+  }
+
+  .credito__enlace {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    min-height: 2rem;
+    /* #949494 sobre #000 da 6.9:1 (AA) */
+    color: #949494;
+    text-decoration: none;
+  }
+
+  .credito__enlace span {
+    background: linear-gradient(currentColor, currentColor) left bottom / 0% 1px no-repeat;
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    .credito__enlace:hover span {
+      color: #d4d4d4;
+      background-size: 100% 1px;
+    }
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .credito__enlace span {
+      transition: background-size 0.3s ease-in-out, color 0.2s ease;
+    }
+
+    .credito__logo {
+      transition: opacity 0.25s ease;
+    }
+  }
+
+  .credito__logo {
+    height: 26px;
+    width: auto;
+    opacity: 0.75;
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    .credito__enlace:hover .credito__logo {
+      opacity: 1;
+    }
+  }
+</style>

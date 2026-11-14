@@ -1,0 +1,93 @@
+---
+// Miniatura ampliable de un producto. Es un enlace a la foto grande (sin JS abre la imagen);
+// con JS, DialogoFoto lo intercepta y la muestra en un <dialog>. La foto grande solo se
+// pide al abrir: sus datos van en data-*.
+import { Image, Picture, getImage } from 'astro:assets';
+import { precio as formatoPrecio } from '../lib/formato';
+import { buscarFoto } from '../lib/fotos-carta';
+import burger from '../assets/ilustraciones/burger.svg';
+
+interface Props {
+  imagen: string | null;
+  nombre: string;
+  precio: number;
+  /** Sin foto, deja un cuadro vacío del mismo tamaño para alinear la lista. */
+  reservar?: boolean;
+}
+
+const { imagen, nombre, precio, reservar = false } = Astro.props;
+const lado = 72;
+const origen = buscarFoto(imagen);
+const [g600, g1000] = origen
+  ? await Promise.all([600, 1000].map((w) => getImage({ src: origen, width: w, format: 'webp' })))
+  : [];
+---
+
+{
+  origen && g1000 && g600 && (
+    <a
+      class="miniatura"
+      href={g1000.src}
+      data-src={g1000.src}
+      data-srcset={`${g600.src} 600w, ${g1000.src} 1000w`}
+      data-ancho={g1000.options.width}
+      data-alto={g1000.options.height}
+      data-nombre={nombre}
+      data-precio={formatoPrecio(precio)}
+      aria-label={`Ver foto de ${nombre}`}
+    >
+      <Picture
+        src={origen}
+        alt=""
+        width={lado}
+        height={lado}
+        fit="cover"
+        widths={[lado, lado * 2]}
+        sizes={`${lado}px`}
+        formats={['avif', 'webp']}
+        loading="lazy"
+        decoding="async"
+      />
+    </a>
+  )
+}
+{
+  !origen && reservar && (
+    <span class="miniatura miniatura--vacia" aria-hidden="true">
+      <Image src={burger} alt="" width={lado} height={lado} loading="lazy" decoding="async" />
+    </span>
+  )
+}
+
+<style>
+  .miniatura {
+    display: block;
+    flex: none;
+    width: 72px;
+    height: 72px;
+    border-radius: 0.75rem;
+    overflow: hidden;
+    border: 1px solid var(--borde);
+    background: #1a1a1a;
+  }
+
+  .miniatura :global(img) {
+    display: block;
+    width: 72px;
+    height: 72px;
+    object-fit: cover;
+  }
+
+  .miniatura--vacia {
+    opacity: 0.55;
+  }
+
+  .miniatura--vacia :global(img) {
+    object-position: center 60%;
+  }
+
+  .miniatura:focus-visible {
+    outline: 3px solid var(--d587-amarillo);
+    outline-offset: 2px;
+  }
+</style>

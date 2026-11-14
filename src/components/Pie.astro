@@ -1,10 +1,14 @@
 ---
 import isotipo from '../assets/marca/distrito587-isotipo-blanco.svg';
-import { datos, direccionCorta, urlInstagram } from '../lib/local';
+import { datos, direccionCorta } from '../lib/local';
 import { url } from '../lib/formato';
+import EnlacesPedido from './EnlacesPedido.astro';
+import Credito from './Credito.astro';
+import Borde from './Borde.astro';
 ---
 
 <footer class="pie">
+  <Borde forma="salsa" />
   <div class="contenedor pie__grid">
     <a href={url()} class="pie__marca">
       <img src={isotipo.src} width="56" height={Math.round((56 * isotipo.height) / isotipo.width)} alt="" loading="lazy" decoding="async" />
@@ -20,6 +24,9 @@ import { url } from '../lib/formato';
                 {h.etiqueta}: {h.abre} a {h.cierra}
               </li>
             ))}
+            {datos.cerrado.map((c) => (
+              <li>{c.etiqueta}: cerrado</li>
+            ))}
           </ul>
         ) : (
           <p>Horario en Instagram</p>
@@ -27,15 +34,20 @@ import { url } from '../lib/formato';
       }
     </div>
     <div class="pie__links">
-      <a href={urlInstagram} rel="noopener">Instagram @{datos.instagram}</a>
       <a href={url('carta')}>Ver la carta</a>
+      <EnlacesPedido class="pie__iconos" modo="icono" incluir={['ubereats', 'pedidosya', 'instagram']} />
     </div>
+  </div>
+  <div class="contenedor">
+    <Credito />
   </div>
 </footer>
 
 <style>
   .pie {
-    border-top: 1px solid var(--borde);
+    --borde-color: #000;
+    position: relative;
+    background: #000;
     padding-block: 2.5rem 3rem;
     color: var(--texto-suave);
     font-size: 0.95rem;
@@ -76,7 +88,35 @@ import { url } from '../lib/formato';
     gap: 0.5rem;
   }
 
-  .pie__links a {
+  .pie__links :global(.enlaces) {
+    margin-top: 0.5rem;
+  }
+
+  .pie__links a:not(.enlace) {
+    align-self: flex-start;
     padding-block: 0.25rem;
+    background: linear-gradient(var(--d587-amarillo), var(--d587-amarillo)) left bottom / 0% 2px no-repeat;
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    .pie__links a:not(.enlace):hover {
+      color: #fff;
+      text-decoration-color: transparent;
+      background-size: 100% 2px;
+    }
+
+    .pie__marca:hover {
+      color: var(--d587-amarillo);
+    }
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .pie__links a:not(.enlace) {
+      transition: background-size 0.3s ease-in-out, color 0.2s ease;
+    }
+
+    .pie__marca {
+      transition: color 0.2s ease;
+    }
   }
 </style>

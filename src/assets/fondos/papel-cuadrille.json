@@ -1,0 +1,13 @@
+{
+  "prompt": "Flat sheet of greaseproof burger wrapping paper printed with a small black and white checkered pattern, crumpled by hand and then smoothed out, with deep realistic creases, sharp fold lines and wrinkles across the whole sheet, faint translucent wax sheen and a few subtle oil spots. The paper fills the entire frame edge to edge, lying on itself, nothing else in view. Soft diffuse overhead daylight, even exposure, no harsh shadows. Shot straight from above at 90 degrees, 50mm lens, everything in sharp focus. High resolution texture photography, neutral white balance, realistic paper fibers, no text, no lettering, no signage, no watermark",
+  "seed": 90437,
+  "width": 1344,
+  "height": 768,
+  "model": "z_image_turbo_bf16",
+  "source": "/home/benja/ai/ComfyUI/output/distrito587-web/papel-cuadrille-s90437_00001_.png",
+  "files": [
+    "papel-cuadrille-640.webp",
+    "papel-cuadrille-1280.webp"
+  ],
+  "date": "2026-11-13"
+}

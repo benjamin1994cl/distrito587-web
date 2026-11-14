@@ -4,20 +4,39 @@
   "promesa": "Todas las burgers con papas caseras de regalo",
   "descripcion": "Hamburguesería smash en Osorno. Burgers con pan de papa y papas fritas caseras de regalo, tocomples, agregados y salsas de la casa.",
   "direccion": {
-    "calle": "Freire esquina Ramírez",
+    "calle": "Freire 587",
     "comuna": "Osorno",
     "region": "Los Lagos",
     "codigoPais": "CL"
   },
   "mapa": {
-    "consulta": "Freire con Ramírez, Osorno, Chile"
+    "consulta": "Freire 587, Osorno, Chile"
   },
   "geo": null,
-  "horario": [],
+  "horario": [
+    {
+      "etiqueta": "Lunes a sábado",
+      "dias": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
+      "abre": "12:00",
+      "cierra": "22:00"
+    }
+  ],
+  "cerrado": [{ "etiqueta": "Domingo" }],
   "whatsapp": null,
   "telefono": null,
   "instagram": "distrito587osorno",
-  "delivery": [],
+  "delivery": [
+    {
+      "id": "ubereats",
+      "nombre": "Uber Eats",
+      "url": "https://www.ubereats.com/cl/store/distrito-587/VDJjzt7qUZ2VEkrRLUzS1g"
+    },
+    {
+      "id": "pedidosya",
+      "nombre": "PedidosYa",
+      "url": "https://www.pedidosya.cl/restaurantes/osorno/distrito-587--osorno-a4b78f19-52df-4c00-bf19-ac7706616da9-menu"
+    }
+  ],
   "pagos": [],
   "cocina": ["Hamburguesas", "Completos", "Comida rápida"],
   "rangoPrecios": "$"

@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 800" width="640" height="800">
+  <defs>
+    <radialGradient id="fondo" cx="50%" cy="105%" r="85%">
+      <stop offset="0" stop-color="#f05432" stop-opacity=".55"/>
+      <stop offset=".55" stop-color="#f68742" stop-opacity=".16"/>
+      <stop offset="1" stop-color="#f68742" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="640" height="800" fill="#141414"/>
+  <rect width="640" height="800" fill="url(#fondo)"/>
+  <g transform="translate(0 170)">
+    <ellipse cx="320" cy="400" rx="190" ry="16" fill="#000" opacity=".4"/>
+    <path fill="#f68742" d="M140 220C140 128 220 82 320 82s180 46 180 138z"/>
+    <g fill="#ffcd27" opacity=".9">
+      <ellipse cx="248" cy="138" rx="16" ry="7" transform="rotate(-22 248 138)"/>
+      <ellipse cx="332" cy="112" rx="16" ry="7"/>
+      <ellipse cx="404" cy="146" rx="16" ry="7" transform="rotate(24 404 146)"/>
+      <ellipse cx="300" cy="176" rx="16" ry="7" transform="rotate(10 300 176)"/>
+    </g>
+    <path fill="#ee2845" d="M138 232c40-14 70 12 104 0s70 12 100 0 66 12 100 0 40 6 60 0v18H138z"/>
+    <path fill="#ffcd27" d="M126 250h388l-26 52-36-24-40 40-44-40-44 40-44-40-40 40-40-40-34 24z"/>
+    <rect x="120" y="296" width="400" height="48" rx="24" fill="#4a2a1a"/>
+    <path fill="#f68742" d="M140 352h360c0 30-26 46-60 46H200c-34 0-60-16-60-46z"/>
+  </g>
+</svg>

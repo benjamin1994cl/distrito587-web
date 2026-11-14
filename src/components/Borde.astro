@@ -1,0 +1,93 @@
+---
+// Borde temático con ambiente hamburguesa. Va como primer hijo de un bloque `.bloque` (position: relative).
+// Cada forma es una transición distinta de la portada:
+//   cuadrille    marquesina a Burgers: franja de papel cuadrillé rasgado
+//   queso        Burgers a Papas: queso cheddar que gotea (cuelga del bloque de abajo)
+//   papas        Papas a Tocomples: silueta de papas fritas
+//   mostaza      Tocomples a Extras: salpicadura de mostaza
+//   pan          Extras a Local: pan con semillas de sésamo (las semillas son huecos)
+//   salsa        Local a pie: salsa en zigzag, como sobre un completo
+interface Props {
+  forma: 'cuadrille' | 'queso' | 'papas' | 'mostaza' | 'pan' | 'salsa';
+}
+
+const { forma } = Astro.props;
+---
+
+<div class={`borde borde--${forma}`} aria-hidden="true"></div>
+
+<style>
+  .borde {
+    position: absolute;
+    left: 0;
+    right: 0;
+    /* 1px de solape con el bloque: sin línea de costura */
+    bottom: calc(100% - 1px);
+    background: var(--borde-color, currentColor);
+    pointer-events: none;
+  }
+
+  /* Formas que sobresalen hacia arriba: máscara SVG anclada abajo. El viewBox lleva 1px transparente arriba y,
+     además, una segunda máscara recorta las 2 filas superiores: con DPR fraccional (1,25 o 2,625) el filtrado
+     del tile no puede teñir la primera fila. */
+  .borde--cuadrille,
+  .borde--papas,
+  .borde--mostaza,
+  .borde--pan {
+    -webkit-mask: var(--forma) bottom left / var(--w) var(--h) repeat-x, linear-gradient(transparent 2px, #000 2px);
+    mask: var(--forma) bottom left / var(--w) var(--h) repeat-x, linear-gradient(transparent 2px, #000 2px);
+    -webkit-mask-composite: source-in;
+    mask-composite: intersect;
+    height: var(--h);
+  }
+
+  /* Papel cuadrillé rasgado, con el gris del papel de Burgers */
+  .borde--cuadrille {
+    --forma: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 -1 140 17'%3E%3Cpath d='M0 16V6L8 3 15 7 24 2 33 6 41 3 52 7 61 2 70 5 80 3 90 7 101 2 111 6 120 3 131 6 140 4V16z'/%3E%3C/svg%3E");
+    --w: 140px;
+    --h: 17px;
+    background:
+      linear-gradient(rgb(0 0 0 / 0.28) 1px, transparent 1px) 0 0 / 8px 8px,
+      linear-gradient(90deg, rgb(0 0 0 / 0.28) 1px, transparent 1px) 0 0 / 8px 8px,
+      var(--borde-color);
+  }
+
+  /* Papas fritas en silueta sobre el fondo oscuro de Tocomples */
+  .borde--papas {
+    --forma: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 -1 96 37'%3E%3Crect x='0' y='30' width='96' height='6'/%3E%3Crect x='5' y='9' width='12' height='30' rx='2.5' transform='rotate(-7 11 36)'/%3E%3Crect x='22' y='3' width='12' height='36' rx='2.5' transform='rotate(4 28 36)'/%3E%3Crect x='40' y='12' width='12' height='28' rx='2.5' transform='rotate(-3 46 36)'/%3E%3Crect x='57' y='5' width='12' height='34' rx='2.5' transform='rotate(8 63 36)'/%3E%3Crect x='76' y='10' width='12' height='30' rx='2.5' transform='rotate(-5 82 36)'/%3E%3C/svg%3E");
+    --w: 96px;
+    --h: 37px;
+  }
+
+  /* Salpicadura de mostaza: ola gruesa con gotas sueltas */
+  .borde--mostaza {
+    --forma: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 -1 120 35'%3E%3Cpath d='M0 34V20C14 8 30 8 46 18S80 26 96 16 112 12 120 20V34z'/%3E%3Ccircle cx='22' cy='5' r='3'/%3E%3Ccircle cx='68' cy='6' r='2.5'/%3E%3Ccircle cx='104' cy='8' r='2'/%3E%3C/svg%3E");
+    --w: 120px;
+    --h: 35px;
+  }
+
+  /* Pan con sésamo: cúpulas con semillas vaciadas, se ve el amarillo de abajo */
+  .borde--pan {
+    --forma: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 -1 100 41'%3E%3Cpath fill-rule='evenodd' d='M0 40V32C0 14 20 4 50 4S100 14 100 32V40zM28 16a4 2 0 1 0 8 0a4 2 0 1 0-8 0zM46 11a4 2 0 1 0 8 0a4 2 0 1 0-8 0zM62 18a4 2 0 1 0 8 0a4 2 0 1 0-8 0zM38 24a4 2 0 1 0 8 0a4 2 0 1 0-8 0zM70 26a4 2 0 1 0 8 0a4 2 0 1 0-8 0zM16 26a4 2 0 1 0 8 0a4 2 0 1 0-8 0zM80 20a4 2 0 1 0 8 0a4 2 0 1 0-8 0z'/%3E%3C/svg%3E");
+    --w: 100px;
+    --h: 41px;
+  }
+
+  /* Queso cheddar: cuelga del borde superior del bloque de abajo y gotea sobre él (no sube sobre el de arriba).
+     Empieza 3px por encima del bloque: el borde superior es plano, sin filas de costura. */
+  .borde--queso {
+    top: -3px;
+    bottom: auto;
+    height: 48px;
+    background: #ffb81c;
+    -webkit-mask: var(--forma) top left / 120px 48px repeat-x;
+    mask: var(--forma) top left / 120px 48px repeat-x;
+    --forma: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 48'%3E%3Cpath d='M0 0H120V14C104 20 92 12 76 14S34 20 0 14z'/%3E%3Crect x='10' y='6' width='14' height='34' rx='7'/%3E%3Crect x='46' y='6' width='12' height='24' rx='6'/%3E%3Crect x='84' y='6' width='15' height='40' rx='7.5'/%3E%3Crect x='106' y='6' width='9' height='20' rx='4.5'/%3E%3C/svg%3E");
+  }
+
+  /* Salsa en zigzag: la línea toca el borde del pie con cada vértice, sin relleno */
+  .borde--salsa {
+    height: 18px;
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 18'%3E%3Cpath d='M-10 3 0 14 10 3 20 14 30 3 40 14 50 3' fill='none' stroke='%23ee2845' stroke-width='4.5' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E") bottom left / 40px 18px repeat-x;
+  }
+</style>

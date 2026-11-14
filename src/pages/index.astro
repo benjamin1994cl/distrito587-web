@@ -1,8 +1,15 @@
 ---
 import Base from '../layouts/Base.astro';
 import Pie from '../components/Pie.astro';
-import FotoProducto from '../components/FotoProducto.astro';
+import CarruselBurgers from '../components/CarruselBurgers.astro';
+import Borde from '../components/Borde.astro';
+import { Picture } from 'astro:assets';
+import papasCaja from '../assets/papas/papas-uber-caja.jpg';
+import papel640 from '../assets/fondos/papel-cuadrille-640.webp';
+import papel1280 from '../assets/fondos/papel-cuadrille-1280.webp';
+import SeccionPapas from '../components/SeccionPapas.astro';
 import LogoArmado from '../components/LogoArmado.astro';
+import EnlacesPedido from '../components/EnlacesPedido.astro';
 import carta from '../data/carta.json';
 import { precio, url } from '../lib/formato';
 import {
@@ -29,8 +36,15 @@ const desde = Math.min(...burgers.map((b) => b.precio));
   titulo="Distrito 587 · Smash burgers en Osorno"
   descripcion={`Smash burgers con pan de papa y papas caseras de regalo, desde ${precio(desde)}. Tocomples, agregados y salsas de la casa en ${direccionCorta}.`}
   jsonLd={jsonLdRestaurant()}
+  atajos={[
+    { href: '#t-burgers', etiqueta: 'Burgers', icono: 'burger' },
+    { href: '#t-papas', etiqueta: 'Papas', icono: 'papas' },
+    ...(tocomples ? [{ href: '#t-tocomples', etiqueta: 'Tocomples', icono: 'tocomple' as const }] : []),
+    { href: '#t-local', etiqueta: 'Local', icono: 'local' },
+    { href: url('carta'), etiqueta: 'Carta', icono: 'carta' },
+  ]}
 >
-  <header class="hero oscuro">
+  <section class="hero oscuro" aria-label="Portada">
     <picture class="hero__poster">
       <source media="(max-width: 700px)" srcset={url('hero/hero-poster-movil.webp')} />
       <img
@@ -66,6 +80,16 @@ const desde = Math.min(...burgers.map((b) => b.precio));
         });
       })();
     </script>
+    <script is:inline>
+      // El logo respira solo mientras el hero está en pantalla
+      (function () {
+        var hero = document.querySelector('.hero');
+        if (!hero || !('IntersectionObserver' in window)) return;
+        new IntersectionObserver(function (e) {
+          hero.classList.toggle('hero--fuera', !e[0].isIntersecting);
+        }).observe(hero);
+      })();
+    </script>
     <div class="hero__velo"></div>
     <div class="contenedor hero__grid">
       <LogoArmado />
@@ -76,19 +100,27 @@ const desde = Math.min(...burgers.map((b) => b.precio));
           {
             datos.horario.length > 0 && (
               <span>
-                {datos.horario.map((h) => `${h.etiqueta} ${h.abre} a ${h.cierra}`).join(' · ')}
+                {datos.horario.map((h) => `${h.etiqueta}, ${h.abre} a ${h.cierra}`).join(' · ')}
               </span>
             )
           }
         </p>
-        <div class="hero__botones">
-          <a class="boton boton--amarillo" href={url('carta')}>Ver carta</a>
-          <a class="boton boton--borde" href={urlComoLlegar} rel="noopener">Cómo llegar</a>
-          {urlWhatsapp && <a class="boton boton--borde" href={urlWhatsapp} rel="noopener">Pedir por WhatsApp</a>}
+        <div class="hero__botones" data-magnetico-grupo>
+          <a class="boton boton--amarillo boton--magnetico" href={url('carta')}>Ver carta</a>
+          <a class="boton boton--borde boton--magnetico" href={urlComoLlegar} target="_blank" rel="noopener">Cómo llegar<span class="visualmente-oculto"> (se abre en una pestaña nueva)</span></a>
+          {urlWhatsapp && <a class="boton boton--borde" href={urlWhatsapp} target="_blank" rel="noopener">Pedir por WhatsApp<span class="visualmente-oculto"> (se abre en una pestaña nueva)</span></a>}
         </div>
+        {
+          datos.delivery.some((d) => d.url) && (
+            <div class="hero__pedido">
+              <p>Pide a domicilio</p>
+              <EnlacesPedido modo="corto" incluir={['ubereats', 'pedidosya']} />
+            </div>
+          )
+        }
       </div>
     </div>
-  </header>
+  </section>
 
   <main id="contenido">
     <p class="promesa">
@@ -98,85 +130,202 @@ const desde = Math.min(...burgers.map((b) => b.precio));
       </span>
     </p>
 
-    <section class="seccion contenedor" aria-labelledby="t-burgers">
-      <div class="seccion__titulo">
-        <h2 id="t-burgers">Hamburguesas</h2>
-        <p>
-          100% smash, pan de papa.{extraSmash && ` Agranda tu burger con otra smash por ${precio(extraSmash.precio)}.`}
-        </p>
+    <script is:inline>document.documentElement.classList.add('papel-diferido');</script>
+    <section
+      class="bloque bloque--burgers"
+      aria-labelledby="t-burgers"
+      style={`--fondo-burgers-img-640: url(${papel640.src}); --fondo-burgers-img-1280: url(${papel1280.src});`}
+    >
+      <Borde forma="cuadrille" />
+      <div class="fondo-papel" aria-hidden="true"><div class="fondo-papel__hoja"></div></div>
+      <script is:inline>
+        (function () {
+          // La foto del papel se pide cuando la sección entra en pantalla, o 2,5 s después de load:
+          // pedirla antes compite con el póster del hero (LCP)
+          var p = document.querySelector('.fondo-papel');
+          if (!p) return;
+          function mostrar() {
+            p.classList.add('fondo-papel--visible');
+          }
+          function diferir() {
+            setTimeout(mostrar, 2500);
+          }
+          if (document.readyState === 'complete') diferir();
+          else addEventListener('load', diferir, { once: true });
+          if ('IntersectionObserver' in window) {
+            var io = new IntersectionObserver(
+              function (e) {
+                if (e[0].isIntersecting) {
+                  mostrar();
+                  io.disconnect();
+                }
+              },
+              { rootMargin: '0px 0px -30% 0px' },
+            );
+            io.observe(p);
+          }
+        })();
+      </script>
+      <div class="contenedor">
+        <div class="seccion__titulo">
+          <h2 id="t-burgers">Hamburguesas</h2>
+          <p>
+            100% smash, pan de papa.{extraSmash && ` Agranda tu burger con otra smash por ${precio(extraSmash.precio)}.`}
+          </p>
+        </div>
+        <span class="etiqueta-papel">Envueltas como se debe</span>
+        <CarruselBurgers burgers={burgers} titulo="t-burgers" />
       </div>
-      <ul class="burgers">
-        {
-          burgers.map((b, i) => (
-            <li class="burger">
-              <FotoProducto imagen={b.imagen} alt={b.nombre} />
-              <span class="burger__numero" aria-hidden="true">
-                {String(i + 1).padStart(2, '0')}
-              </span>
-              <h3>{b.nombre}</h3>
-              <p class="burger__desc">{b.descripcion}</p>
-              <p class="precio burger__precio">{precio(b.precio)}</p>
-            </li>
-          ))
-        }
-      </ul>
     </section>
+
+    <SeccionPapas />
 
     {
       tocomples && (
-        <section class="seccion contenedor" aria-labelledby="t-tocomples">
-          <div class="seccion__titulo">
-            <h2 id="t-tocomples">Tocomples</h2>
-            <p>Los clásicos de siempre, en pan de papa.</p>
+        <section class="bloque bloque--tocomples" aria-labelledby="t-tocomples">
+          <Borde forma="papas" />
+          <div class="tocomples__fondo" aria-hidden="true">
+            <picture>
+              <source media="(max-width: 47.99rem)" srcset={url('tocomples/tocomples-poster-movil.webp')} />
+              <img
+                class="tocomples__poster"
+                src={url('tocomples/tocomples-poster.webp')}
+                width="1280"
+                height="704"
+                alt=""
+                loading="lazy"
+                decoding="async"
+              />
+            </picture>
+            <video class="tocomples__video" muted loop playsinline preload="none" hidden>
+              <source src={url('tocomples/tocomples-movil.mp4')} type="video/mp4" media="(max-width: 47.99rem)" />
+              <source src={url('tocomples/tocomples.webm')} type="video/webm" />
+              <source src={url('tocomples/tocomples.mp4')} type="video/mp4" />
+            </video>
           </div>
-          <ul class="tocomples">
-            {tocomples.productos.map((t) => (
-              <li>
-                <div>
-                  <h3>{t.nombre}</h3>
-                  <p>{t.descripcion}</p>
-                </div>
-                <p class="precio">{precio(t.precio)}</p>
-              </li>
-            ))}
-          </ul>
+          <div class="contenedor">
+            <div class="seccion__titulo">
+              <h2 id="t-tocomples">Tocomples</h2>
+              <p>Los clásicos de siempre, en pan de papa.</p>
+            </div>
+            <ul class="tocomples" data-foco>
+              {tocomples.productos.map((t) => (
+                <li>
+                  <div>
+                    <h3>{t.nombre}</h3>
+                    <p>{t.descripcion}</p>
+                  </div>
+                  <p class="precio">{precio(t.precio)}</p>
+                </li>
+              ))}
+            </ul>
+          </div>
+          <script is:inline>
+            (function () {
+              // Sin autoplay: el video se pide al entrar la sección en pantalla y se pausa al salir.
+              // Con movimiento reducido nunca se reproduce: queda el póster.
+              var v = document.querySelector('.tocomples__video');
+              if (!v || !('IntersectionObserver' in window)) return;
+              var mq = matchMedia('(prefers-reduced-motion: reduce)');
+              // Sin JS el video queda oculto (los controles nativos taparían el póster)
+              v.hidden = false;
+              var visible = false;
+              function ajustar() {
+                if (visible && !mq.matches) v.play().catch(function () {});
+                else v.pause();
+              }
+              new IntersectionObserver(
+                function (e) {
+                  visible = e[e.length - 1].isIntersecting;
+                  ajustar();
+                },
+                { threshold: 0.15 },
+              ).observe(v);
+              mq.addEventListener('change', ajustar);
+            })();
+          </script>
+          <script is:inline>
+            (function () {
+              // Foco radial que sigue al cursor: un listener delegado, solo con puntero fino y sin reducir movimiento
+              var ul = document.querySelector('[data-foco]');
+              if (!ul || !matchMedia('(hover: hover) and (pointer: fine)').matches) return;
+              if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+              var raf = 0, ev, li;
+              ul.addEventListener('pointermove', function (e) {
+                ev = e;
+                li = e.target.closest('li');
+                if (!li || raf) return;
+                raf = requestAnimationFrame(function () {
+                  raf = 0;
+                  var r = li.getBoundingClientRect();
+                  li.style.setProperty('--px', ev.clientX - r.left + 'px');
+                  li.style.setProperty('--py', ev.clientY - r.top + 'px');
+                });
+              });
+            })();
+          </script>
         </section>
       )
     }
 
-    <section class="seccion contenedor" aria-labelledby="t-extras">
-      <div class="seccion__titulo">
-        <h2 id="t-extras">Para acompañar</h2>
+    <section class="bloque bloque--extras" aria-labelledby="t-extras">
+      <Borde forma="mostaza" />
+      <div class="contenedor">
+        <div class="seccion__titulo">
+          <h2 id="t-extras">Para acompañar</h2>
+        </div>
+        <div class="listas">
+          {
+            listas.map((c) => (
+              <div class="lista">
+                <h3>{c.nombre}</h3>
+                {c.id === 'papas-caseras' && (
+                  <Picture
+                    class="lista__foto"
+                    src={papasCaja}
+                    formats={['avif', 'webp']}
+                    widths={[400, 550]}
+                    sizes="(min-width: 48rem) 22rem, 90vw"
+                    width={550}
+                    height={309}
+                    alt="Papas caseras en caja"
+                    loading="lazy"
+                    decoding="async"
+                  />
+                )}
+                <ul>
+                  {c.productos.map((p) => (
+                    <li>
+                      <span>
+                        <span class="lista__nombre">
+                          {p.nombre}
+                          <svg class="salsa" viewBox="0 0 100 8" preserveAspectRatio="none" aria-hidden="true" focusable="false">
+                            <path d="M1 4 Q 9 0.5 17 4 T 33 4 T 49 4 T 65 4 T 81 4 T 99 4" pathLength="1" />
+                          </svg>
+                        </span>
+                        {p.descripcion && <small>{p.descripcion}</small>}
+                      </span>
+                      <span class="precio">{precio(p.precio)}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))
+          }
+        </div>
+        <p class="seccion__mas">
+          <a class="boton boton--negro" href={url('carta')}>Ver la carta completa</a>
+        </p>
       </div>
-      <div class="listas">
-        {
-          listas.map((c) => (
-            <div class="lista">
-              <h3>{c.nombre}</h3>
-              <ul>
-                {c.productos.map((p) => (
-                  <li>
-                    <span>
-                      {p.nombre}
-                      {p.descripcion && <small>{p.descripcion}</small>}
-                    </span>
-                    <span class="precio">{precio(p.precio)}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))
-        }
-      </div>
-      <p class="seccion__mas">
-        <a class="boton boton--amarillo" href={url('carta')}>Ver la carta completa</a>
-      </p>
     </section>
 
-    <section class="seccion local" aria-labelledby="t-local">
+    <section class="bloque bloque--local" aria-labelledby="t-local">
+      <Borde forma="pan" />
       <div class="contenedor local__grid">
         <div class="local__texto">
-          <h2 id="t-local">El local</h2>
+          <div class="seccion__titulo">
+            <h2 id="t-local">El local</h2>
+          </div>
           <p class="local__direccion">{datos.direccion.calle}<br />{datos.direccion.comuna}, {datos.direccion.region}</p>
           {
             datos.horario.length > 0 ? (
@@ -191,19 +340,25 @@ const desde = Math.min(...burgers.map((b) => b.precio));
                       </td>
                     </tr>
                   ))}
+                  {datos.cerrado.map((c) => (
+                    <tr>
+                      <th scope="row">{c.etiqueta}</th>
+                      <td>Cerrado</td>
+                    </tr>
+                  ))}
                 </tbody>
               </table>
             ) : (
               <p>
-                Revisa el horario del día en nuestro <a href={urlInstagram} rel="noopener">Instagram @{datos.instagram}</a>.
+                Revisa el horario del día en nuestro <a href={urlInstagram} target="_blank" rel="noopener">Instagram @{datos.instagram}<span class="visualmente-oculto"> (se abre en una pestaña nueva)</span></a>.
               </p>
             )
           }
           <div class="local__botones">
-            <a class="boton boton--amarillo" href={urlComoLlegar} rel="noopener">Cómo llegar</a>
-            {urlWhatsapp && <a class="boton boton--borde" href={urlWhatsapp} rel="noopener">WhatsApp</a>}
-            <a class="boton boton--borde" href={urlInstagram} rel="noopener">Instagram</a>
+            <a class="boton boton--amarillo" href={urlComoLlegar} target="_blank" rel="noopener">Cómo llegar<span class="visualmente-oculto"> (se abre en una pestaña nueva)</span></a>
+            {urlWhatsapp && <a class="boton boton--borde" href={urlWhatsapp} target="_blank" rel="noopener">WhatsApp<span class="visualmente-oculto"> (se abre en una pestaña nueva)</span></a>}
           </div>
+          <EnlacesPedido incluir={['ubereats', 'pedidosya', 'instagram']} />
         </div>
         <div class="local__mapa">
           <iframe
@@ -230,7 +385,8 @@ const desde = Math.min(...burgers.map((b) => b.precio));
     overflow: hidden;
     background: #1a0d08;
     color: #fff;
-    padding-block: clamp(2rem, 6vw, 4.5rem) clamp(2rem, 5vw, 3.5rem);
+    /* La navbar fija ocupa --alto-navbar arriba: el contenido baja lo mismo. Sin ella vale 0 */
+    padding-block: calc(var(--alto-navbar, 0px) + clamp(2rem, 6vw, 4.5rem)) clamp(2rem, 5vw, 3.5rem);
   }
 
   .hero__poster,
@@ -279,7 +435,7 @@ const desde = Math.min(...burgers.map((b) => b.precio));
   @media (max-width: 55.99rem) {
     .hero {
       align-items: start;
-      padding-top: clamp(3rem, 20vh, 9rem);
+      padding-top: calc(var(--alto-navbar, 0px) + clamp(3rem, 20vh, 9rem));
     }
   }
 
@@ -320,13 +476,23 @@ const desde = Math.min(...burgers.map((b) => b.precio));
     margin-top: 1.5rem;
   }
 
-  /* Fondo oscuro: el foco global (amarillo) se ve bien, se anula la regla para fondos claros */
-  .hero :focus-visible {
-    outline-color: var(--d587-amarillo);
-  }
-
   .hero .boton--borde {
     border-color: #fff;
+  }
+
+  .hero__pedido {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem 0.9rem;
+    margin-top: 1rem;
+  }
+
+  .hero__pedido p {
+    font-weight: 700;
+    font-size: 1rem;
+    color: #ffe6c7;
+    text-shadow: 0 1px 8px rgb(0 0 0 / 0.6);
   }
 
   @media (prefers-reduced-motion: no-preference) {
@@ -346,8 +512,60 @@ const desde = Math.min(...burgers.map((b) => b.precio));
       animation-delay: 3.4s;
     }
 
+    .hero__texto > .hero__pedido {
+      animation-delay: 3.55s;
+    }
+
     .hero__texto:focus-within > * {
       animation: none;
+    }
+  }
+
+  /* Logo respirando: arranca cuando termina de armarse (3,9 s). La escala va en el h1 y el halo en su ::before,
+     un degradado ya difuminado que anima solo opacity: un drop-shadow animado rasteriza el SVG en cada cuadro */
+  .hero :global(.hero__logo)::before {
+    content: '';
+    position: absolute;
+    inset: -18% -12%;
+    z-index: -1;
+    pointer-events: none;
+    opacity: 0;
+    background: radial-gradient(closest-side, rgb(255 205 39 / 0.5), rgb(240 84 50 / 0.3) 55%, transparent);
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .hero :global(.hero__logo) {
+      isolation: isolate;
+      animation: respirar 3.6s ease-in-out 3.9s infinite;
+    }
+
+    .hero :global(.hero__logo)::before {
+      animation: halo 3.6s ease-in-out 3.9s infinite;
+    }
+
+    .hero.hero--fuera :global(.hero__logo),
+    .hero.hero--fuera :global(.hero__logo)::before {
+      animation-play-state: paused;
+    }
+  }
+
+  @keyframes respirar {
+    0%,
+    100% {
+      scale: 1;
+    }
+    50% {
+      scale: 1.035;
+    }
+  }
+
+  @keyframes halo {
+    0%,
+    100% {
+      opacity: 0;
+    }
+    50% {
+      opacity: 1;
     }
   }
 
@@ -417,116 +635,80 @@ const desde = Math.min(...burgers.map((b) => b.precio));
     }
   }
 
-  .seccion {
-    padding-block: clamp(3rem, 8vw, 5rem) 0;
-  }
-
-  .seccion__titulo {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: baseline;
-    gap: 0.5rem 1.25rem;
-    margin-bottom: 1.75rem;
-  }
-
-  .seccion__titulo h2 {
-    font-size: clamp(2.75rem, 8vw, 4.5rem);
-    color: var(--d587-rojo);
-  }
-
-  .seccion__titulo p {
-    color: var(--texto-suave);
-  }
-
   .seccion__mas {
     margin-top: 2rem;
   }
 
-  /* Burgers */
-  .burgers {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-    display: grid;
-    gap: 1rem;
-    grid-template-columns: repeat(auto-fill, minmax(min(100%, 16rem), 1fr));
-  }
-
-  .burger {
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    gap: 0.6rem;
-    padding: 1.4rem 1.25rem 1.25rem;
-    background: var(--fondo-alto);
-    border: 1px solid var(--borde);
-    border-radius: var(--radio);
+  /* Tocomples: fondo de video oscuro. El hot dog queda a la derecha; el texto y las tarjetas, a la izquierda */
+  .tocomples__fondo {
+    position: absolute;
+    inset: -3px 0 0;
+    z-index: 0;
     overflow: hidden;
+    pointer-events: none;
   }
 
-  @media (prefers-reduced-motion: no-preference) {
-    @supports (animation-timeline: view()) {
-      .burger {
-        animation: aparecer linear both;
-        animation-timeline: view();
-        animation-range: entry 0% cover 30%;
-      }
-    }
+  .tocomples__poster,
+  .tocomples__video {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
   }
 
-  @keyframes aparecer {
-    from {
-      opacity: 0;
-      transform: translateY(2rem) scale(0.97);
-    }
-  }
-
-  .burger::before {
+  .tocomples__fondo::after {
     content: '';
     position: absolute;
-    inset: 0 0 auto;
-    height: 4px;
-    background: linear-gradient(90deg, var(--d587-naranja), var(--d587-rojo));
+    inset: 0;
+    background:
+      linear-gradient(180deg, #111 0, transparent 3rem),
+      linear-gradient(90deg, rgb(10 10 10 / 0.92) 0%, rgb(10 10 10 / 0.6) 45%, transparent 75%);
   }
 
-  .burger__numero {
-    font-family: var(--display);
-    font-size: 1.1rem;
-    color: var(--d587-naranja);
+  /* El subtítulo bajo el título: a la derecha caía sobre el video, donde el velo se aclara */
+  .bloque--tocomples .seccion__titulo {
+    flex-direction: column;
+    align-items: flex-start;
   }
 
-  .burger h3 {
-    font-size: 2rem;
+  .bloque--tocomples > .contenedor {
+    position: relative;
+    z-index: 1;
   }
 
-  .burger__desc {
-    color: var(--texto-suave);
-    flex: 1;
+  /* Con movimiento reducido no hay video: queda el póster */
+  @media (prefers-reduced-motion: reduce) {
+    .tocomples__video {
+      display: none;
+    }
   }
 
-  .burger__precio {
-    font-size: 2.1rem;
+  /* Celular: el video va arriba y se funde a oscuro; el contenido empieza bajo él */
+  @media (max-width: 47.99rem) {
+    .tocomples__fondo {
+      bottom: auto;
+      height: 22rem;
+    }
+
+    .tocomples__fondo::after {
+      background:
+        linear-gradient(180deg, #111 0, transparent 3rem),
+        linear-gradient(180deg, transparent 0, rgb(10 10 10 / 0.5) 45%, #111 100%);
+    }
+
+    .bloque--tocomples {
+      padding-top: 17rem;
+    }
   }
 
-  .burger :global(.foto-producto img) {
-    width: 100%;
-    height: auto;
-    border-radius: calc(var(--radio) - 4px);
-  }
-
-  /* Tocomples */
   .tocomples {
     list-style: none;
     margin: 0;
     padding: 0;
     display: grid;
-    gap: 1rem;
-  }
-
-  @media (min-width: 48rem) {
-    .tocomples {
-      grid-template-columns: 1fr 1fr;
-    }
+    gap: 0.75rem;
+    max-width: 30rem;
   }
 
   .tocomples li {
@@ -534,22 +716,28 @@ const desde = Math.min(...burgers.map((b) => b.precio));
     justify-content: space-between;
     align-items: center;
     gap: 1rem;
-    padding: 1.1rem 1.25rem;
-    border: 1px solid var(--borde);
-    border-left: 4px solid var(--d587-amarillo);
+    padding: 0.9rem 1.1rem;
+    background: rgb(17 17 17 / 0.85);
+    color: #fff;
+    border: 1px solid #333;
     border-radius: var(--radio);
+    -webkit-backdrop-filter: blur(4px);
+    backdrop-filter: blur(4px);
   }
 
   .tocomples h3 {
-    font-size: 1.75rem;
+    font-size: 1.6rem;
   }
 
   .tocomples li p:not(.precio) {
-    color: var(--texto-suave);
+    color: #cfcfcf;
+    font-size: 0.92rem;
   }
 
   .tocomples .precio {
-    font-size: 1.9rem;
+    color: var(--d587-amarillo);
+    font-size: 1.6rem;
+    white-space: nowrap;
   }
 
   /* Listas de acompañamientos */
@@ -566,8 +754,12 @@ const desde = Math.min(...burgers.map((b) => b.precio));
 
   .lista h3 {
     font-size: 1.9rem;
-    color: var(--d587-naranja);
-    margin-bottom: 0.5rem;
+    display: inline-block;
+    margin-bottom: 0.75rem;
+    padding: 0.2rem 0.7rem 0.1rem;
+    background: #000;
+    color: var(--d587-amarillo);
+    transform: rotate(-1.5deg);
   }
 
   .lista ul {
@@ -582,26 +774,104 @@ const desde = Math.min(...burgers.map((b) => b.precio));
     align-items: baseline;
     gap: 1rem;
     padding-block: 0.55rem;
-    border-bottom: 1px dashed var(--borde);
+    border-bottom: 2px dashed rgb(0 0 0 / 0.45);
+  }
+
+  .lista :global(.lista__foto) {
+    display: block;
+    width: 100%;
+    max-width: 22rem;
+    aspect-ratio: 16 / 9;
+    object-fit: cover;
+    margin-bottom: 0.75rem;
+    border: 2px solid #000;
+    border-radius: var(--radio);
+    box-shadow: 4px 4px 0 #000;
+  }
+
+  .lista__nombre {
+    position: relative;
+    display: inline-block;
+  }
+
+  /* Línea de salsa bajo el nombre: absoluta, no altera el alto de la fila */
+  .salsa {
+    position: absolute;
+    left: 0;
+    bottom: -0.1em;
+    width: 100%;
+    height: 0.3em;
+    overflow: visible;
+    pointer-events: none;
+    fill: none;
+    stroke: #8a1c10;
+    stroke-width: 2.2;
+    stroke-linecap: round;
+    opacity: 0;
+  }
+
+  .salsa path {
+    vector-effect: non-scaling-stroke;
+    stroke-dasharray: 1;
+    stroke-dashoffset: 1;
   }
 
   .lista small {
     display: block;
-    color: var(--texto-suave);
+    color: var(--suave);
     font-size: 0.9rem;
   }
 
   .lista .precio {
+    color: #000;
     font-size: 1.45rem;
   }
 
-  /* Local */
-  .local {
-    margin-top: clamp(3rem, 8vw, 5rem);
-    padding-bottom: clamp(3rem, 8vw, 5rem);
-    background: var(--fondo-alto);
+  /* Dinamismo con puntero fino: el foco sigue al cursor y la salsa se dibuja. Nada depende solo del hover. */
+  @media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+    .tocomples li {
+      position: relative;
+      overflow: hidden;
+    }
+
+    .tocomples li::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      opacity: 0;
+      background: radial-gradient(14rem circle at var(--px, 50%) var(--py, 50%), rgb(255 255 255 / 0.14), transparent 70%);
+      transition: opacity 0.3s;
+    }
+
+    .tocomples li:hover::before {
+      opacity: 1;
+    }
+
+    .lista .salsa path {
+      transition: stroke-dashoffset 0.25s ease-in;
+    }
+
+    .lista li:hover .salsa {
+      opacity: 1;
+    }
+
+    .lista li:hover .salsa path {
+      stroke-dashoffset: 0;
+      transition: stroke-dashoffset 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .lista .precio {
+      transition: translate 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), rotate 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .lista li:hover .precio {
+      translate: -0.2rem -0.15rem;
+      rotate: -3deg;
+    }
   }
 
+  /* Local */
   .local__grid {
     display: grid;
     gap: 2rem;
@@ -612,12 +882,6 @@ const desde = Math.min(...burgers.map((b) => b.precio));
     .local__grid {
       grid-template-columns: 1fr 1.3fr;
     }
-  }
-
-  .local h2 {
-    font-size: clamp(2.75rem, 8vw, 4.5rem);
-    color: var(--d587-rojo);
-    margin-bottom: 1rem;
   }
 
   .local__direccion {
@@ -644,6 +908,10 @@ const desde = Math.min(...burgers.map((b) => b.precio));
     margin-top: 1.5rem;
   }
 
+  .local__botones + :global(.enlaces) {
+    margin-top: 0.75rem;
+  }
+
   .local__mapa iframe {
     width: 100%;
     height: auto;
@@ -651,5 +919,6 @@ const desde = Math.min(...burgers.map((b) => b.precio));
     border: 0;
     border-radius: var(--radio);
     background: #222;
+    box-shadow: 8px 8px 0 var(--d587-rojo);
   }
 </style>

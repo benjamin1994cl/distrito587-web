@@ -1,0 +1,430 @@
+---
+// Papas caseras de regalo. El video está bajo el pliegue: preload="none", sin autoplay,
+// y el script lo reproduce solo mientras la ventana está en pantalla.
+import { Picture } from 'astro:assets';
+import { url } from '../lib/formato';
+import Borde from './Borde.astro';
+import cono from '../assets/papas/papas-uber-cono.jpg';
+import caja from '../assets/papas/papas-caja.jpg';
+import diario from '../assets/papas/papas-diario.jpg';
+
+// Collage tipo polaroid. El cono es el empaque propio del local: la más grande y visible.
+// La foto del cono es de 550 px de ancho: ninguna variante pasa de ese tamaño real.
+const polaroids = [
+  { clase: 'cono', foto: cono, alt: 'Papas fritas en el cono de Distrito 587 sobre papel de diario', widths: [240, 360, 550] },
+  { clase: 'caja', foto: caja, alt: 'Papas caseras con tocino y salsa verde en caja', widths: [240, 360, 480, 720] },
+  { clase: 'diario', foto: diario, alt: 'Papas caseras con salsa verde en papel de diario', widths: [240, 360, 480, 720] },
+];
+---
+
+<section class="seccion-papas bloque bloque--papas" aria-labelledby="t-papas">
+  <Borde forma="queso" />
+  <div class="contenedor papas__grid">
+    <div class="papas__texto">
+      <div class="seccion__titulo papas__encabezado">
+        <h2 class="papas__titular" id="t-papas"><span class="papas__titular-texto">Papas <span class="papas__realce">caseras</span><br />de regalo</span></h2>
+      </div>
+      <p class="papas__bajada">Lo que nos distingue: papas de verdad, hechas acá mismo.</p>
+      <ul class="papas__lista" role="list">
+        <li>Cortadas en el local</li>
+        <li>Fritas al momento</li>
+        <li>Con todas las burgers, sin costo extra</li>
+      </ul>
+    </div>
+    <div class="papas__medios">
+      <div class="papas__ventana">
+        <div class="papas__sombra">
+          <div class="papas__marco">
+            <img
+              class="papas__poster"
+              src={url('papas/papas-poster.webp')}
+              width="540"
+              height="960"
+              alt=""
+              loading="lazy"
+              decoding="async"
+            />
+            <video class="papas__video" muted loop playsinline preload="none" aria-hidden="true" hidden>
+              <source src={url('papas/papas.webm')} type="video/webm" />
+              <source src={url('papas/papas.mp4')} type="video/mp4" />
+            </video>
+          </div>
+        </div>
+        <div class="papas__sello" aria-hidden="true"><span>De<br />regalo</span></div>
+      </div>
+      <ul class="papas__fotos" role="list">
+        {
+          polaroids.map((p) => (
+            <li class={`papas__foto papas__foto--${p.clase}`}>
+              <figure class="papas__polaroid">
+                <Picture
+                  src={p.foto}
+                  alt={p.alt}
+                  widths={p.widths}
+                  sizes="(min-width: 64rem) 12rem, 60vw"
+                  formats={['avif', 'webp']}
+                  loading="lazy"
+                  decoding="async"
+                />
+              </figure>
+            </li>
+          ))
+        }
+      </ul>
+    </div>
+  </div>
+</section>
+
+<script is:inline>
+  (function () {
+    var v = document.querySelector('.papas__video');
+    var s = document.querySelector('.seccion-papas');
+    if (!v || !s || !('IntersectionObserver' in window)) return;
+    v.hidden = false;
+    var mq = matchMedia('(prefers-reduced-motion: reduce)');
+    var visible = false;
+    function ajustar() {
+      s.classList.toggle('seccion-papas--visible', visible);
+      if (visible && !mq.matches) v.play().catch(function () {});
+      else v.pause();
+    }
+    new IntersectionObserver(
+      function (e) {
+        visible = e[e.length - 1].isIntersecting;
+        ajustar();
+      },
+      { threshold: 0.25 },
+    ).observe(v);
+    mq.addEventListener('change', ajustar);
+  })();
+</script>
+
+<style>
+  .seccion-papas {
+    padding-block: clamp(4rem, 10vw, 7rem);
+  }
+
+  .papas__grid {
+    display: grid;
+    gap: 2.5rem;
+    align-items: center;
+  }
+
+  @media (min-width: 48rem) {
+    .papas__grid {
+      grid-template-columns: 1fr minmax(18rem, 24rem);
+      gap: 4rem;
+    }
+  }
+
+  .papas__encabezado {
+    margin-bottom: 0;
+  }
+
+  .papas__titular {
+    font-size: clamp(3.2rem, 11vw, 6.5rem);
+  }
+
+  /* Sticker: amarillo sobre negro (14:1), girado */
+  .papas__realce {
+    display: inline-block;
+    padding: 0.02em 0.18em 0;
+    background: #000;
+    color: var(--d587-amarillo);
+    transform: rotate(-3deg);
+  }
+
+  .papas__bajada {
+    max-width: 34ch;
+    margin-top: 0.9rem;
+    font-size: 1.15rem;
+    color: #000;
+  }
+
+  .papas__lista {
+    list-style: none;
+    display: grid;
+    gap: 0.6rem;
+    margin: 1.5rem 0 0;
+    padding: 0;
+    font-weight: 600;
+  }
+
+  .papas__lista li::before {
+    content: '✦';
+    content: '✦' / '';
+    margin-right: 0.6rem;
+    color: #000;
+  }
+
+  .papas__medios {
+    position: relative;
+    justify-self: center;
+    width: min(82vw, 24rem);
+  }
+
+  .papas__ventana {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 9 / 16;
+  }
+
+  /* La sombra va en un filtro del padre: sigue la forma ya recortada por el clip-path */
+  .papas__sombra {
+    position: relative;
+    z-index: 1;
+    height: 100%;
+    filter: drop-shadow(0 1.5rem 2rem rgb(0 0 0 / 0.35));
+  }
+
+  .papas__marco {
+    position: relative;
+    height: 100%;
+    overflow: hidden;
+    border: 3px solid #000;
+    border-radius: 1.75rem;
+    background: #1a1a1a;
+  }
+
+  .papas__poster,
+  .papas__video {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .papas__sello {
+    position: absolute;
+    z-index: 2;
+    top: -1.4rem;
+    left: -1.4rem;
+    display: grid;
+    place-items: center;
+    width: 6.5rem;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    background: var(--d587-amarillo);
+    color: #000;
+    font: 400 1.55rem/0.9 var(--display);
+    text-align: center;
+    transform: rotate(-12deg);
+    box-shadow: 0 0.5rem 1.5rem rgb(0 0 0 / 0.4);
+  }
+
+  /* Celular y tablet: carrusel corto con imán bajo el video, sin desbordar la página */
+  .papas__fotos {
+    display: flex;
+    gap: 1rem;
+    margin: 2.25rem 0 0;
+    padding: 0.5rem 0.25rem 1.25rem;
+    list-style: none;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+  }
+
+  .papas__fotos::-webkit-scrollbar {
+    display: none;
+  }
+
+  .papas__foto {
+    flex: 0 0 62%;
+    scroll-snap-align: center;
+    rotate: var(--giro, 0deg);
+  }
+
+  .papas__foto--cono {
+    --giro: -3deg;
+    --proporcion: 3 / 4;
+  }
+
+  .papas__foto--caja {
+    --giro: 2.5deg;
+    --proporcion: 4 / 5;
+  }
+
+  .papas__foto--diario {
+    --giro: -2deg;
+    --proporcion: 4 / 5;
+  }
+
+  .papas__polaroid {
+    margin: 0;
+    padding: 0.55rem 0.55rem 1.7rem;
+    background: #fffaf0;
+    box-shadow: 0 0.6rem 1.4rem rgb(0 0 0 / 0.3);
+  }
+
+  .papas__polaroid :global(picture) {
+    display: block;
+  }
+
+  .papas__polaroid :global(img) {
+    display: block;
+    width: 100%;
+    height: auto;
+    aspect-ratio: var(--proporcion);
+    object-fit: cover;
+    object-position: 50% 55%;
+    background: #2a2118;
+  }
+
+  /* Escritorio: las fotos asoman detrás de la ventana, inclinadas y a medio cubrir */
+  @media (min-width: 64rem) {
+    .papas__grid {
+      padding-inline-end: 7rem;
+    }
+
+    .papas__fotos {
+      display: block;
+      margin: 0;
+      padding: 0;
+      overflow: visible;
+    }
+
+    .papas__foto {
+      position: absolute;
+      z-index: 0;
+    }
+
+    .papas__foto--cono {
+      --giro: 7deg;
+      top: 5%;
+      right: -7rem;
+      width: 12rem;
+    }
+
+    .papas__foto--caja {
+      --giro: -8deg;
+      bottom: 12%;
+      left: -5rem;
+      width: 10rem;
+    }
+
+    .papas__foto--diario {
+      --giro: 5deg;
+      bottom: 2%;
+      right: -5rem;
+      width: 9.5rem;
+    }
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    .papas__sello {
+      transition: rotate 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+  }
+
+  @media (prefers-reduced-motion: no-preference) and (hover: hover) and (pointer: fine) {
+    .papas__foto {
+      transition: rotate 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .papas__foto:hover {
+      rotate: 0deg;
+    }
+
+    .papas__ventana:hover .papas__sello {
+      rotate: 28deg;
+    }
+
+    /* El marco termina animado en -2deg: el giro del padre lo compensa sin tocar su transform */
+    @supports (animation-timeline: view()) {
+      .papas__sombra {
+        transition: rotate 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+      }
+
+      .papas__ventana:hover .papas__sombra {
+        rotate: 2deg;
+      }
+    }
+  }
+
+  /* Los estados iniciales ocultos viven solo aquí: sin soporte o con reduce, todo se ve */
+  @media (prefers-reduced-motion: no-preference) {
+    @supports (animation-timeline: view()) {
+      .papas__marco {
+        animation: papas-abrir linear both;
+        animation-timeline: view();
+        animation-range: entry 5% entry 90%;
+      }
+
+      .papas__sello {
+        animation: papas-sello linear both;
+        animation-timeline: view();
+        animation-range: entry 40% cover 55%;
+      }
+
+      /* Entran girando: el giro de reposo va en la propiedad rotate del li, la entrada en el figure */
+      .papas__polaroid {
+        animation: papas-polaroid linear both;
+        animation-timeline: view();
+        animation-range: entry 0% entry 100%;
+      }
+
+      /* El titular anima su texto interno: el h2 es destino del ancla y no debe desplazarse */
+      .papas__titular-texto,
+      .papas__bajada,
+      .papas__lista li {
+        animation: papas-subir linear both;
+        animation-timeline: view();
+        animation-range: entry 10% cover 35%;
+      }
+    }
+
+    .papas__titular-texto {
+      display: block;
+    }
+
+    .papas__sello span {
+      display: inline-block;
+      animation: papas-latir 1.6s cubic-bezier(0.34, 1.56, 0.64, 1) infinite paused;
+    }
+
+    /* El latido corre solo mientras la sección está en pantalla */
+    .seccion-papas--visible .papas__sello span {
+      animation-play-state: running;
+    }
+  }
+
+  @keyframes papas-abrir {
+    from {
+      clip-path: circle(8% at 50% 60%);
+      transform: rotate(4deg) scale(0.9);
+    }
+    to {
+      clip-path: circle(75% at 50% 50%);
+      transform: rotate(-2deg);
+    }
+  }
+
+  @keyframes papas-polaroid {
+    from {
+      opacity: 0;
+      transform: translateY(3rem) rotate(-24deg) scale(0.85);
+    }
+  }
+
+  @keyframes papas-sello {
+    from {
+      opacity: 0;
+      transform: rotate(-60deg) scale(0.3);
+    }
+  }
+
+  @keyframes papas-subir {
+    from {
+      opacity: 0;
+      transform: translateY(2rem);
+    }
+  }
+
+  @keyframes papas-latir {
+    50% {
+      transform: scale(1.08);
+    }
+  }
+</style>

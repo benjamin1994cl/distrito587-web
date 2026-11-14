@@ -1,0 +1,429 @@
+---
+// Carrusel con imán (scroll-snap) de las burgers. Sin JS se desliza igual; las flechas y los puntos aparecen con JS.
+import FotoProducto from './FotoProducto.astro';
+import ilustracion from '../assets/ilustraciones/burger.svg';
+import { precio } from '../lib/formato';
+
+interface Burger {
+  nombre: string;
+  descripcion: string;
+  precio: number;
+  imagen: string | null;
+}
+interface Props {
+  burgers: Burger[];
+  /** id del h2 que nombra el carrusel */
+  titulo: string;
+}
+
+const { burgers, titulo } = Astro.props;
+const total = burgers.length;
+---
+
+<div class="carrusel" role="group" aria-roledescription="carrusel" aria-labelledby={titulo}>
+  <div class="carrusel__pista" role="group" tabindex="0" aria-label="Lista de burgers">
+    {
+      burgers.map((b, i) => (
+        <div
+          class="burger"
+          role="group"
+          aria-roledescription="burger"
+          aria-label={`${i + 1} de ${total}`}
+        >
+          <div class="burger__inclina">
+          <div class="burger__tarjeta">
+          <div class="burger__foto">
+            <FotoProducto imagen={b.imagen} ancho={640} alto={800} sizes="(min-width: 64rem) min(373px, 30vw), (min-width: 48rem) 45vw, 80vw">
+              <img src={ilustracion.src} width="640" height="800" alt="" loading="lazy" decoding="async" />
+            </FotoProducto>
+          </div>
+          <div class="burger__cuerpo">
+            <span class="burger__numero" aria-hidden="true">
+              {String(i + 1).padStart(2, '0')}
+            </span>
+            <h3>{b.nombre}</h3>
+            <p class="burger__desc">{b.descripcion}</p>
+            <p class="precio burger__precio">{precio(b.precio)}</p>
+          </div>
+          </div>
+          </div>
+        </div>
+      ))
+    }
+  </div>
+  <div class="carrusel__controles" hidden>
+    <button type="button" class="carrusel__flecha efecto-boton" data-dir="-1" aria-label="Burger anterior"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false"><path d="M14.5 5.5 8 12l6.5 6.5" /></svg></button>
+    <div class="carrusel__puntos">
+      {
+        burgers.map((_, i) => (
+          <button type="button" class="carrusel__punto" aria-label={`Ir a la burger ${i + 1}`}></button>
+        ))
+      }
+    </div>
+    <button type="button" class="carrusel__flecha efecto-boton" data-dir="1" aria-label="Burger siguiente"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false"><path d="M9.5 5.5 16 12l-6.5 6.5" /></svg></button>
+  </div>
+</div>
+
+<script is:inline>
+  document.querySelectorAll('.carrusel').forEach(function (c) {
+    var pista = c.querySelector('.carrusel__pista');
+    var slides = Array.prototype.slice.call(pista.children);
+    var puntos = c.querySelectorAll('.carrusel__punto');
+    var flechas = c.querySelectorAll('.carrusel__flecha');
+    var ratios = slides.map(function () { return 0; });
+    var quieto = window.matchMedia('(prefers-reduced-motion: reduce)');
+    var ir = function (x) { pista.scrollTo({ left: x, behavior: quieto.matches ? 'auto' : 'smooth' }); };
+    var paso = function () { return slides.length > 1 ? slides[1].offsetLeft - slides[0].offsetLeft : pista.clientWidth; };
+    var activo = 0;
+    // Con varias burgers a la vista solo se alcanzan total - visibles + 1 posiciones: sobran los últimos puntos.
+    var ajustarPuntos = function () {
+      var visibles = Math.max(1, Math.round((pista.clientWidth + (slides[1] ? paso() - slides[0].offsetWidth : 0)) / paso()));
+      puntos.forEach(function (p, i) { p.hidden = i > slides.length - visibles; });
+    };
+    var pintar = function () {
+      var n = ratios.length - 1;
+      // El punto activo es la primera burger completa a la vista; así al llegar al final marca la última posición alcanzable.
+      var i0 = ratios.findIndex(function (r) { return r >= 0.98; });
+      if (i0 < 0) i0 = ratios.findIndex(function (r) { return r >= 0.6; });
+      if (i0 >= 0) activo = i0;
+      puntos.forEach(function (p, i) {
+        if (i === activo) p.setAttribute('aria-current', 'true'); else p.removeAttribute('aria-current');
+      });
+      flechas[0].disabled = ratios[0] >= 0.98;
+      flechas[1].disabled = ratios[n] >= 0.98;
+    };
+    var io = new IntersectionObserver(function (es) {
+      es.forEach(function (e) { ratios[slides.indexOf(e.target)] = e.intersectionRatio; });
+      pintar();
+    }, { root: pista, threshold: [0, 0.6, 0.98] });
+    slides.forEach(function (s) { io.observe(s); });
+    flechas.forEach(function (f) {
+      f.addEventListener('click', function () {
+        pista.scrollBy({ left: Number(f.dataset.dir) * paso(), behavior: quieto.matches ? 'auto' : 'smooth' });
+      });
+    });
+    puntos.forEach(function (p, i) {
+      p.addEventListener('click', function () { ir(slides[i].offsetLeft - slides[0].offsetLeft); });
+    });
+    // Inclinación y brillo con puntero fino: un listener delegado en la pista, un cuadro por movimiento
+    var fino = window.matchMedia('(hover: hover) and (pointer: fine)');
+    if (fino.matches && !quieto.matches) {
+      var MAX = 6, raf = 0, ev = null, actual = null;
+      var soltar = function (el) {
+        if (!el) return;
+        el.style.setProperty('--rx', '0deg');
+        el.style.setProperty('--ry', '0deg');
+      };
+      pista.addEventListener('pointermove', function (e) {
+        if (e.pointerType !== 'mouse' && e.pointerType !== 'pen') return;
+        ev = e;
+        var el = e.target.closest('.burger__inclina');
+        if (el !== actual) { soltar(actual); actual = el; }
+        if (!el || raf) return;
+        raf = requestAnimationFrame(function () {
+          raf = 0;
+          if (!actual) return;
+          var r = actual.getBoundingClientRect();
+          var x = (ev.clientX - r.left) / r.width, y = (ev.clientY - r.top) / r.height;
+          actual.style.setProperty('--px', x * 100 + '%');
+          actual.style.setProperty('--py', y * 100 + '%');
+          actual.style.setProperty('--ry', ((x - 0.5) * 2 * MAX).toFixed(2) + 'deg');
+          actual.style.setProperty('--rx', ((0.5 - y) * 2 * MAX).toFixed(2) + 'deg');
+        });
+      });
+      // Al hacer scroll la tarjeta se mueve bajo el puntero: se suelta la inclinación
+      pista.addEventListener('scroll', function () {
+        soltar(actual);
+        actual = null;
+      }, { passive: true });
+      pista.addEventListener('pointerleave', function () {
+        soltar(actual);
+        actual = null;
+      });
+    }
+    c.querySelector('.carrusel__controles').hidden = false;
+    c.classList.add('carrusel--listo');
+    new ResizeObserver(ajustarPuntos).observe(pista);
+    ajustarPuntos();
+    pintar();
+  });
+</script>
+
+<style>
+  .carrusel {
+    --ver: 80%;
+    --hueco: 1rem;
+  }
+
+  .carrusel__pista {
+    display: flex;
+    gap: var(--hueco);
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: thin;
+    scrollbar-color: #000 transparent;
+    /* Aire para la sombra dura de las tarjetas, que el overflow recortaría */
+    padding: 0 6px 8px 0;
+    border-radius: var(--radio);
+  }
+
+  /* Con JS hay flechas y puntos: se oculta la barra. Sin JS queda visible y discreta. */
+  .carrusel--listo .carrusel__pista {
+    scrollbar-width: none;
+  }
+
+  .carrusel--listo .carrusel__pista::-webkit-scrollbar {
+    display: none;
+  }
+
+  .carrusel__pista:focus-visible {
+    outline-offset: 4px;
+    /* halo crema: el contorno negro no depende del cuadrillé de atrás */
+    box-shadow: 0 0 0 8px var(--crema);
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .carrusel__pista {
+      scroll-behavior: smooth;
+    }
+  }
+
+  @media (min-width: 48rem) {
+    .carrusel {
+      --ver: calc((100% - var(--hueco)) / 2);
+    }
+  }
+
+  @media (min-width: 64rem) {
+    .carrusel {
+      --ver: calc((100% - 2 * var(--hueco)) / 3);
+    }
+  }
+
+  /* El slide es la caja del imán y no se transforma: la animación va en la tarjeta interna */
+  .burger {
+    flex: 0 0 var(--ver);
+    scroll-snap-align: start;
+    display: flex;
+  }
+
+  /* Envoltorio de la inclinación 3D: la tarjeta conserva su transform (realce) intacto */
+  .burger__inclina {
+    flex: 1;
+    display: flex;
+    min-width: 0;
+  }
+
+  .burger__tarjeta {
+    position: relative;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    background: var(--fondo-alto);
+    border: 2px solid #000;
+    border-radius: var(--radio);
+    box-shadow: 6px 6px 0 var(--d587-rojo);
+    overflow: hidden;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    @supports (animation-timeline: view(inline)) {
+      .burger__tarjeta {
+        animation: realce linear both;
+        animation-timeline: view(inline);
+      }
+    }
+  }
+
+  /* Hover con puntero fino: inclinación (máx. 6 grados), brillo, zoom de la foto y precio. Todo vuelve con rebote. */
+  @media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+    .burger {
+      perspective: 900px;
+    }
+
+    .burger__inclina {
+      transform: rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
+      transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+      will-change: transform;
+    }
+
+    .burger__tarjeta::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      z-index: 2;
+      pointer-events: none;
+      opacity: 0;
+      background: radial-gradient(circle at var(--px, 50%) var(--py, 50%), rgb(255 255 255 / 0.28), transparent 55%);
+      transition: opacity 0.3s;
+    }
+
+    .burger__inclina:hover .burger__tarjeta::after {
+      opacity: 1;
+    }
+
+    .burger__foto :global(img) {
+      transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .burger__inclina:hover .burger__foto :global(img) {
+      transform: scale(1.06);
+    }
+
+    .burger__precio {
+      transition: translate 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .burger__inclina:hover .burger__precio {
+      translate: 0 -0.2rem;
+    }
+  }
+
+  @keyframes realce {
+    /* Solo escala: bajar la opacidad dejaba el texto de los laterales bajo 4.5:1 */
+    0% {
+      transform: scale(0.96);
+    }
+    22%,
+    78% {
+      transform: scale(1);
+    }
+    100% {
+      transform: scale(0.96);
+    }
+  }
+
+  .burger__foto {
+    aspect-ratio: 4 / 5;
+    background: #141414;
+    overflow: hidden;
+  }
+
+  .burger__foto :global(picture),
+  .burger__foto :global(img) {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .burger__cuerpo {
+    position: relative;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 1.1rem 1.25rem 1.25rem;
+  }
+
+  .burger__cuerpo::before {
+    content: '';
+    position: absolute;
+    inset: 0 0 auto;
+    height: 4px;
+    background: linear-gradient(90deg, var(--d587-naranja), var(--d587-rojo));
+  }
+
+  .burger__numero {
+    font-family: var(--display);
+    font-size: 1.1rem;
+    color: var(--d587-naranja);
+  }
+
+  .burger h3 {
+    font-size: 2rem;
+    color: var(--d587-blanco, #fff);
+  }
+
+  .burger__desc {
+    color: var(--texto-suave);
+    flex: 1;
+  }
+
+  .burger__precio {
+    font-size: 2.1rem;
+  }
+
+  .carrusel__controles {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-top: 1.25rem;
+    /* Banda crema bajo los controles: sobre el cuadrillé no hay contraste fijo */
+    padding: 0.5rem 0.75rem;
+    background: var(--crema);
+    border-radius: 999px;
+  }
+
+  .carrusel__controles[hidden] {
+    display: none;
+  }
+
+  .carrusel__flecha {
+    width: 3rem;
+    height: 3rem;
+    flex: none;
+    display: grid;
+    place-items: center;
+    padding: 0;
+    /* Sobre crema: negro (18:1) con flecha blanca */
+    color: var(--d587-blanco);
+    background: #000;
+    border: 0;
+    border-radius: 50%;
+    cursor: pointer;
+  }
+
+  .carrusel__flecha svg {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2.5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  .carrusel__flecha:disabled {
+    background: rgb(0 0 0 / 0.12);
+    color: rgb(0 0 0 / 0.45);
+    cursor: default;
+  }
+
+  .carrusel__puntos {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.1rem;
+  }
+
+  /* Área táctil de 24px con un punto visible de 10px */
+  .carrusel__punto[hidden] {
+    display: none;
+  }
+
+  .carrusel__punto {
+    position: relative;
+    width: 1.5rem;
+    height: 1.5rem;
+    padding: 0;
+    background: none;
+    border: 0;
+    cursor: pointer;
+  }
+
+  .carrusel__punto::after {
+    content: '';
+    position: absolute;
+    inset: 0.5rem;
+    border-radius: 50%;
+    background: #707070;
+    transition: background-color 0.2s;
+  }
+
+  .carrusel__punto[aria-current='true']::after {
+    background: #000;
+    box-shadow: 0 0 0 2px var(--crema), 0 0 0 4px #000;
+  }
+</style>

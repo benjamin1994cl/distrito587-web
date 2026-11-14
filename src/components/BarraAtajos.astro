@@ -1,0 +1,208 @@
+---
+// Barra inferior de atajos, solo en celular. Son enlaces normales (funcionan sin JS);
+// el script opcional marca con aria-current el atajo de la sección visible.
+export interface Atajo {
+  href: string;
+  etiqueta: string;
+  icono: 'burger' | 'tocomple' | 'papas' | 'salsa' | 'bebida' | 'local' | 'carta';
+}
+
+interface Props {
+  atajos: Atajo[];
+}
+
+const { atajos } = Astro.props;
+
+// Trazos propios, 24x24, heredan el color del texto.
+const iconos: Record<Atajo['icono'], string> = {
+  burger:
+    'M4 10a8 5 0 0 1 16 0Z M3 14h18 M4 17.5h16 M6 17.5a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2',
+  tocomple:
+    'M3 15.5c0-3 2-5 5-5h8c3 0 5 2 5 5s-2 3.5-5 3.5H8c-3 0-5-.5-5-3.5Z M6 14.5c2-1.5 3 1.5 6 0s4 1.5 6 0',
+  papas:
+    'M6 10 5 4m5 6-.5-7m5 7 .5-7m4 7 1-6 M5 10h14l-1.5 10h-11Z',
+  salsa:
+    'M12 3c3 4.5 6 7.5 6 11a6 6 0 0 1-12 0c0-3.5 3-6.5 6-11Z M9.5 14.5a2.5 2.5 0 0 0 2 2.5',
+  bebida:
+    'M6 7h12l-1.5 13h-9Z M5 7h14 M13 7l2-4h3',
+  local:
+    'M12 21s-6.5-6-6.5-11a6.5 6.5 0 0 1 13 0c0 5-6.5 11-6.5 11Z M12 12.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Z',
+  carta:
+    'M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3Z M9 9h6 M9 13h6',
+};
+---
+
+<nav class="atajos" aria-label="Atajos">
+  <ul>
+    {
+      atajos.map((a) => (
+        <li>
+          <a href={a.href}>
+            <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" focusable="false">
+              <path d={iconos[a.icono]} />
+            </svg>
+            <span>{a.etiqueta}</span>
+          </a>
+        </li>
+      ))
+    }
+  </ul>
+</nav>
+
+<script>
+  // Opcional: marca el atajo de la sección visible. Los enlaces a otra página se ignoran.
+  const secciones = new Map<Element, HTMLAnchorElement>();
+  document.querySelectorAll<HTMLAnchorElement>('.atajos a').forEach((a) => {
+    if (!a.hash) return;
+    const destino = document.getElementById(a.hash.slice(1));
+    const seccion = destino?.closest('section') ?? destino;
+    if (seccion) secciones.set(seccion, a);
+  });
+
+  const marcar = (activo: HTMLAnchorElement) => {
+    secciones.forEach((a) =>
+      a === activo ? a.setAttribute('aria-current', 'true') : a.removeAttribute('aria-current'),
+    );
+    const lista = activo.closest('ul')!;
+    lista.scrollLeft = activo.offsetLeft - (lista.clientWidth - activo.offsetWidth) / 2;
+  };
+
+  const observador = new IntersectionObserver(
+    (entradas) => {
+      for (const e of entradas) {
+        const a = secciones.get(e.target);
+        if (e.isIntersecting && a) marcar(a);
+      }
+    },
+    { rootMargin: '-30% 0px -60% 0px' },
+  );
+  secciones.forEach((a, s) => {
+    observador.observe(s);
+    a.addEventListener('click', () => marcar(a));
+  });
+</script>
+
+<style is:global>
+  :root {
+    --alto-atajos: 0px;
+  }
+
+  .atajos {
+    display: none;
+  }
+
+  @media (max-width: 55.9375rem) {
+    :root {
+      --alto-atajos: calc(3.5rem + env(safe-area-inset-bottom, 0px));
+    }
+
+    html {
+      scroll-padding-bottom: var(--alto-atajos);
+    }
+
+    body {
+      padding-bottom: var(--alto-atajos);
+    }
+
+    .atajos {
+      display: block;
+      position: fixed;
+      inset: auto 0 0;
+      z-index: 20;
+      height: var(--alto-atajos);
+      padding-bottom: env(safe-area-inset-bottom, 0px);
+      background: #0a0a0a;
+      border-top: 1px solid var(--borde);
+    }
+
+    .atajos ul {
+      display: flex;
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+
+    .atajos li {
+      flex: 1 0 3.5rem;
+    }
+
+    .atajos a {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0.15rem;
+      height: 100%;
+      min-height: 3rem;
+      padding-inline: 0.25rem;
+      color: var(--texto-suave);
+      font-size: 0.72rem;
+      font-weight: 600;
+      line-height: 1.1;
+      text-decoration: none;
+      white-space: nowrap;
+    }
+
+    .atajos svg {
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 1.75;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .atajos a::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 20%;
+      right: 20%;
+      height: 3px;
+      border-radius: 0 0 3px 3px;
+      background: var(--d587-amarillo);
+      transform: scaleX(0);
+    }
+
+    .atajos a[aria-current] {
+      color: var(--d587-amarillo);
+    }
+
+    .atajos a[aria-current]::before {
+      transform: scaleX(1);
+    }
+
+    .atajos a:focus-visible {
+      outline: 3px solid var(--d587-amarillo);
+      outline-offset: -4px;
+      border-radius: 0.5rem;
+    }
+
+    @media (prefers-reduced-motion: no-preference) {
+      .atajos {
+        animation: atajos-entrada 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+      }
+
+      .atajos a::before {
+        transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+      }
+
+      .atajos a:active svg {
+        transform: scale(0.88);
+      }
+
+      .atajos svg {
+        transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+      }
+
+      @keyframes atajos-entrada {
+        from {
+          transform: translateY(100%);
+        }
+      }
+    }
+  }
+</style>
