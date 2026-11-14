@@ -6,7 +6,7 @@ Sitio estático de Distrito 587, hamburguesería smash en Osorno. Astro con sali
 
 ```bash
 npm install
-npm run dev       # genera la carta y levanta http://localhost:4321/distrito587-web/
+npm run dev       # genera la carta y levanta http://localhost:4321/
 npm run build     # genera la carta y compila a dist/
 npm run preview   # sirve dist/
 npm test          # tests del generador de la carta
@@ -28,6 +28,15 @@ Columnas: `categoria,orden,nombre,descripcion,precio,disponible,imagen`. Categor
 
 Si una fila no cuadra, el build falla y lista los errores por fila, con el número de línea del CSV (`fila 7: el precio 'seis mil' no es un número`; 1 es el encabezado). El precio acepta `6990`, `6.990`, `$6.990` o `$ 6.990`; `6.99` o `1.2.3` se rechazan. La web publicada no cambia.
 
+### Fotos de la carta
+
+La columna `imagen` de `data/carta-web.csv` lleva el nombre de la foto, sin extensión (por ejemplo `smash-clasica`). El archivo va en `src/assets/carta/<nombre>.jpg|png|webp|avif`.
+
+- Proporción 4:5 vertical, mínimo 640 x 800 px (ideal 1280 x 1600 px). Si la proporción es otra, el recorte al centro lo hace el sitio (variantes 4:5 con `fit="cover"` y `object-fit` en CSS).
+- El build genera AVIF y WebP en varios anchos (`srcset`); sube el original sin comprimir de más.
+- Si falta el archivo, el slide muestra una ilustración propia de burger (`src/assets/ilustraciones/burger.svg`), así que se pueden subir las fotos de a una.
+- Después de cambiar el CSV, corre `npm run carta` para regenerar `src/data/carta.json`.
+
 ### Datos del local
 
 Los campos en `null` o vacíos no se muestran. Formato del horario:
@@ -44,18 +53,18 @@ Con `whatsapp` aparece el botón "Pedir por WhatsApp"; con `horario` y `geo` el 
 
 ## Despliegue
 
-`.github/workflows/deploy.yml` publica en cada push a `main` (y con el botón manual). Variables opcionales del repo:
+`.github/workflows/deploy.yml` publica en cada push a `main` (y con el botón manual). El sitio se publica en `https://distrito587.cl` (el dominio va en `public/CNAME` y en Settings > Pages). Variables opcionales del repo, solo como override:
 
-| Variable | Fase 1 (por defecto) | Con dominio propio |
+| Variable | Por defecto | Para qué |
 |---|---|---|
-| `SITE_URL` | `https://benjamin1994cl.github.io` | `https://distrito587.cl` |
-| `BASE_PATH` | `/distrito587-web` | `/` |
+| `SITE_URL` | `https://distrito587.cl` | Probar con otro dominio |
+| `BASE_PATH` | `/` | Probar en un subdirectorio |
 
 En Settings > Pages, la fuente tiene que ser "GitHub Actions".
 
-URLs sin barra final: el build genera `carta.html` (`build.format: 'file'`, `trailingSlash: 'never'`), así que la carta vive en `/carta` (esa es la URL de los QR). La portada conserva la barra (`/distrito587-web/` en Fase 1, `/` en Fase 3).
+URLs sin barra final: el build genera `carta.html` (`build.format: 'file'`, `trailingSlash: 'never'`), así que la carta vive en `/carta` (esa es la URL de los QR). La portada es `/`.
 
-`robots.txt` solo tiene efecto en la raíz del dominio, o sea desde la Fase 3: en el subdirectorio de github.io los buscadores no lo leen.
+`robots.txt` permite todo y apunta a `https://distrito587.cl/sitemap-index.xml`.
 
 ## Reglas
 

@@ -25,7 +25,7 @@ jobs:
       - run: npm test
       - run: npm run build
         env:
-          # Variables del repo (Settings > Variables). Sin definir, se usa github.io/distrito587-web.
+          # Variables del repo (Settings > Variables). Sin definir, se usa https://distrito587.cl en la raíz.
           SITE_URL: ${{ vars.SITE_URL }}
           BASE_PATH: ${{ vars.BASE_PATH }}
       - uses: actions/upload-pages-artifact@v3

@@ -3,7 +3,7 @@ export function precio(valor: number): string {
   return '$' + valor.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
 }
 
-/** Une la base del sitio con una ruta interna: url('carta') -> "/distrito587-web/carta". */
+/** Une la base del sitio con una ruta interna: url('carta') -> "/carta" (o "/<base>/carta" si se define BASE_PATH). */
 export function url(ruta = ''): string {
   const base = import.meta.env.BASE_URL.replace(/\/$/, '');
   const limpia = ruta.replace(/^\//, '');
