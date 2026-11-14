@@ -27,6 +27,11 @@ const bloquesLd = jsonLd ? (Array.isArray(jsonLd) ? jsonLd : [jsonLd]) : [];
 const variante = ruta === '' ? 'portada' : ruta === 'carta' ? 'carta' : 'simple';
 const tocomples = atajos?.some((a) => a.href === '#t-tocomples') ?? false;
 const imagenOg = urlAbsoluta('og-distrito587.png');
+// Cloudflare Web Analytics: sin cookies ni datos personales, así que no requiere banner.
+// El token es público (va en el HTML) y llega como variable del repo en el build de GitHub Actions.
+// Sin token válido (por ejemplo, en `npm run dev`) no se carga nada.
+const tokenCf = (import.meta.env.PUBLIC_CF_BEACON_TOKEN ?? '').trim();
+const beaconCf = /^[0-9a-f]{32}$/i.test(tokenCf) ? JSON.stringify({ token: tokenCf }) : null;
 ---
 
 <!doctype html>
@@ -66,6 +71,16 @@ const imagenOg = urlAbsoluta('og-distrito587.png');
     <meta name="twitter:image" content={imagenOg} />
 
     {bloquesLd.map((ld) => <script type="application/ld+json" set:html={JSON.stringify(ld)} />)}
+    {
+      beaconCf && (
+        <script
+          is:inline
+          defer
+          src="https://static.cloudflareinsights.com/beacon.min.js"
+          data-cf-beacon={beaconCf}
+        />
+      )
+    }
   </head>
   <body>
     <a class="saltar" href="#contenido">Saltar al contenido</a>

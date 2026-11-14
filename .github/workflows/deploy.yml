@@ -28,6 +28,8 @@ jobs:
           # Variables del repo (Settings > Variables). Sin definir, se usa https://distrito587.cl en la raíz.
           SITE_URL: ${{ vars.SITE_URL }}
           BASE_PATH: ${{ vars.BASE_PATH }}
+          # Token público de Cloudflare Web Analytics. Sin definir, el sitio sale sin analítica.
+          PUBLIC_CF_BEACON_TOKEN: ${{ vars.CF_BEACON_TOKEN }}
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist
